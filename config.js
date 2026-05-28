@@ -7,10 +7,14 @@ window.TENANT_CONFIG = {
   appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwgK7D894u6QSKeKf8KJ514ItfI2VsWZBqZAAjJroYWu3egtdZ7TF7EF8MDYkRxOPKdQw/exec',
   receipt: {
     businessName: 'Birei Farm',
-    address: 'P.O. Box ',
+    address: 'PASTE_BIREI_ADDRESS',
     kraPin: 'PASTE_BIREI_KRA_PIN',
     logoUrl: 'logo.png',
     footer: 'Thank you for your support',
-    numberPrefix: 'BF'
+    numberPrefix: 'BF',
+    paymentMethods: 'PASTE_BIREI_PAYMENT_DETAILS',
+    paymentTerms: 'Please settle this invoice within 14 days of the date of issue.',
+    vatRate: 0,
+    vatNote: ''
   }
 };
