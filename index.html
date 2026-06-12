@@ -287,11 +287,28 @@
   header.brand #nav-settings[data-lock-state="open"]   .nav-lock-icon-open {
     display: inline;
   }
-  /* Open state: shackle outline picks up the brass-light to read as ACTIVE */
+  /* v6.11.88 — State COLOURS + pulse, ported to the header from the old
+     nav.bottom-nav rules. When Admin moved to the header (v6.11.83) the icon-
+     DISPLAY logic came along but these colour/animation rules were left behind as
+     orphans, so the header padlock silently lost its amber "locked" warning and —
+     critically — its GREEN "writes open" signal, plus the state-change pulse.
+     Restored here; the orphan nav.bottom-nav #nav-settings block is removed below.
+     Locked = amber-copper · Admin = brass · Open = green (writes ON). */
+  header.brand #nav-settings[data-lock-state="locked"] svg { stroke: #c97b3a; }
+  header.brand #nav-settings[data-lock-state="admin"]  svg { stroke: var(--brass-light); }
+  header.brand #nav-settings[data-lock-state="open"]   svg { stroke: #6b9e5b; }
+  /* Open state (writes ON): shackle + box pick up the sage-green to read as live */
   header.brand #nav-settings[data-lock-state="open"] {
-    color: #d4a55b;
-    border-color: #d4a55b;
+    color: #6b9e5b;
+    border-color: #6b9e5b;
   }
+  header.brand #nav-settings svg { transition: stroke 0.3s ease; }
+  @keyframes navLockPulse {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  header.brand #nav-settings.lock-pulse svg { animation: navLockPulse 0.45s ease-out; }
   /* v5.9.0 — Header biometric unlock button.
      Position to LEFT of refresh button. Only visible when stealth ON
      AND credential registered. Tap → native biometric/PIN prompt. */
@@ -698,10 +715,9 @@
     border-top: 2px solid var(--brass);
     padding: 0.4rem 0.2rem 0.55rem;
     display: grid;
-    /* v6.11.5 — 6 columns. Cluster nav compresses Tea/Poultry/Sheep/Cows/Other 
-       into Crops + Livestock hubs. Original 7-col baseline restored + 1 for 
-       Sales (added in v6.11.0). Sealed § 7.x: "paint, not walls" — same 
-       structural data, cleaner thumb-target real estate. */
+    /* v6.11.84 — 6 columns: Home/Crops/Livestock/Sales/Expenses/Insights.
+       Admin moving to the header (v6.11.83) freed a slot; Expenses fills it as
+       the money-OUT twin of Sales. Paint, not walls. */
     grid-template-columns: repeat(6, 1fr);
     gap: 0.08rem;
   }
@@ -743,50 +759,13 @@
   }
   nav.bottom-nav button.central.active svg { background: var(--brass-light); }
 
-  /* v5.1.0 — Three-state padlock for #nav-settings */
-  /* Hide all three icon groups by default */
-  nav.bottom-nav #nav-settings .nav-lock-icon-locked,
-  nav.bottom-nav #nav-settings .nav-lock-icon-admin,
-  nav.bottom-nav #nav-settings .nav-lock-icon-open {
-    display: none;
-  }
-  /* Show the right group based on state */
-  nav.bottom-nav #nav-settings[data-lock-state="locked"] .nav-lock-icon-locked,
-  nav.bottom-nav #nav-settings[data-lock-state="admin"]  .nav-lock-icon-admin,
-  nav.bottom-nav #nav-settings[data-lock-state="open"]   .nav-lock-icon-open {
-    display: inline;
-  }
-  /* Locked padlock — amber/copper (warning, not alarming) */
-  nav.bottom-nav #nav-settings[data-lock-state="locked"] svg {
-    stroke: #c97b3a;  /* amber-copper */
-  }
-  nav.bottom-nav #nav-settings[data-lock-state="locked"].active svg {
-    stroke: #d68a47;  /* slightly brighter when active */
-  }
-  /* Admin gear — neutral (Cheison authenticated, gate still closed) */
-  nav.bottom-nav #nav-settings[data-lock-state="admin"] svg {
-    stroke: var(--brass-light);
-  }
-  /* Open padlock — green (writes ON) */
-  nav.bottom-nav #nav-settings[data-lock-state="open"] svg {
-    stroke: #6b9e5b;  /* sage/forest green — Sinonin palette */
-  }
-  nav.bottom-nav #nav-settings[data-lock-state="open"].active svg {
-    stroke: #82b774;
-  }
-  /* Subtle pop animation when state changes */
-  nav.bottom-nav #nav-settings svg {
-    transition: stroke 0.3s ease;
-  }
-  /* Pop animation triggered by .lock-pulse class added briefly on state-change */
-  @keyframes navLockPulse {
-    0%   { transform: scale(1); }
-    35%  { transform: scale(1.18); }
-    100% { transform: scale(1); }
-  }
-  nav.bottom-nav #nav-settings.lock-pulse svg {
-    animation: navLockPulse 0.45s ease-out;
-  }
+  /* v6.11.88 — The three-state padlock CSS that lived here (scoped to
+     nav.bottom-nav #nav-settings) was orphaned when Admin moved to the header
+     (v6.11.83): after the move those selectors matched no element. Removed.
+     The header equivalents — icon display + state colours + pulse — live in the
+     header.brand #nav-settings block above. Sealed: relocating a control means
+     porting ALL of its scoped CSS, then deleting the old rules — never leaving
+     orphans that quietly drop styling at the new location. */
   .field { margin-bottom: 1.1rem; }
   .field label {
     display: block;
@@ -848,7 +827,7 @@
   #kind-toggle-tea { grid-template-columns: 1fr 1fr 1fr; }
   #kind-toggle-poultry { grid-template-columns: 1fr 1fr 1fr 1fr 1fr; }
   #kind-toggle-poultry button { font-size: 0.65rem; padding: 0.55rem 0.2rem; letter-spacing: 0.04em; }
-  #kind-toggle-expenses { grid-template-columns: 1fr; }
+  #kind-toggle-expenses { grid-template-columns: repeat(auto-fit, minmax(74px, 1fr)); gap: 0.3rem; }
   .kind-toggle button {
     background: transparent; border: none;
     padding: 0.75rem 0.3rem;
@@ -1108,6 +1087,10 @@
     text-align: center;
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  /* v6.11.92 — severity variants: amber = warning/partial, red = error. The
+     default green left-border reads as success; these distinguish at a glance. */
+  .toast.toast-warn { border-left-color: #d68a47; }
+  .toast.toast-error { border-left-color: #c0524a; }
 
   /* v5.1.0 — Modal infrastructure (passphrase + revoke confirmation).
      Sinonin-themed: rounded corners, brand greens, Inter font, soft shadow. */
@@ -3407,15 +3390,33 @@
   <svg class="leaf" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:none"></svg>
   <img class="brand-logo" id="brand-logo" src="logo.png" alt="Sinonin Food Innovations" title="Hold to toggle stealth mode (unlock requires admin)">
   <span class="header-sync" id="header-sync"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Online</span></span>
-  <!-- v6.10.5 — Admin button RELOCATED from bottom-nav to header. Sits 
-       left of refresh wheel. Same id (#nav-settings) so all existing JS 
-       (state pulls, lock-state attribute updates, click routing to 
-       panel-settings) keeps working unchanged. Multi-state padlock SVG 
-       preserved. Hidden by CSS when data-lock-state="locked" (operator 
-       default; revealed via long-press escape hatch on version label). 
-       Sealed § 6.x candidate: surfaces used by the principal but not 
-       daily operators belong in the header — bottom nav real estate is 
-       for thumb-frequent ground-ops controls. -->
+  <!-- v6.11.83 — Admin button RELOCATED back to the header, to the LEFT of
+       refresh (Cheison 06 Jun 2026 Verden), reversing the v6.11.7 bottom-nav
+       consolidation. The exact same element (id #nav-settings, data-view="admin",
+       the data-lock-state machine, three-state padlock SVG) is lifted from the
+       bottom nav — moved, not duplicated — so wireLockIconAuth, state pulls,
+       lock-state updates and click→switchView('admin') all keep working
+       unchanged. Header CSS keeps it ALWAYS VISIBLE with the padlock as the
+       state indicator (matching the bottom-nav behaviour it replaces), so
+       operators still see it. Bottom nav drops to 5 columns. -->
+  <button data-view="admin" id="nav-settings" data-lock-state="locked" aria-label="Admin" title="Admin">
+    <svg class="nav-lock-svg" viewBox="0 0 24 24" aria-hidden="true">
+      <g class="nav-lock-icon-locked">
+        <path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/>
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+      </g>
+      <g class="nav-lock-icon-admin">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
+      </g>
+      <g class="nav-lock-icon-open">
+        <path d="M7 11V7a5 5 0 0 1 9.5-2" fill="none"/>
+        <rect x="5" y="11" width="14" height="10" rx="2"/>
+        <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
+      </g>
+    </svg>
+  </button>
   <button id="header-refresh-btn" class="header-refresh" type="button" aria-label="Refresh data" title="Refresh from cloud">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18">
       <polyline points="23 4 23 10 17 10"></polyline>
@@ -3663,15 +3664,15 @@
       <div class="hero-metric-card hmc-coffee" data-product="coffee" data-card-id="coffee" style="display:none">
         <div class="hmc-head">
           <span class="hmc-lbl">Coffee performance</span>
-          <span class="hmc-period">enterprise placeholder</span>
+          <span class="hmc-period" id="hero-coffee-period">delivered \u2192 settled</span>
         </div>
-        <div class="hmc-val">—</div>
-        <div class="hmc-sub-head">data path coming soon</div>
+        <div class="hmc-val" id="hero-coffee-val">0 kg</div>
+        <div class="hmc-sub-head" id="hero-coffee-sub">no deliveries yet</div>
         <div class="hmc-horizons">
-          <div class="hmc-horizon"><div class="hmc-h-lbl">Today</div><div class="hmc-h-val">—</div></div>
-          <div class="hmc-horizon"><div class="hmc-h-lbl">MTD</div><div class="hmc-h-val">—</div></div>
-          <div class="hmc-horizon"><div class="hmc-h-lbl">YTD</div><div class="hmc-h-val">—</div></div>
-          <div class="hmc-horizon"><div class="hmc-h-lbl">Life</div><div class="hmc-h-val">—</div></div>
+          <div class="hmc-horizon"><div class="hmc-h-lbl">Pending</div><div class="hmc-h-val" id="hero-coffee-pending">0 kg</div></div>
+          <div class="hmc-horizon"><div class="hmc-h-lbl">Settled</div><div class="hmc-h-val" id="hero-coffee-settled">0 kg</div></div>
+          <div class="hmc-horizon"><div class="hmc-h-lbl">Received</div><div class="hmc-h-val" id="hero-coffee-received">Ksh 0</div></div>
+          <div class="hmc-horizon"><div class="hmc-h-lbl">Avg/kg</div><div class="hmc-h-val" id="hero-coffee-avg">\u2014</div></div>
         </div>
       </div>
 
@@ -3745,10 +3746,10 @@
           <span class="qa-icon">💸</span>
           <span class="qa-label">Expenses</span>
         </button>
-        <button class="quick-add-card" type="button" onclick="openAddPanel('tea','banked')">
-          <span class="qa-icon">💰</span>
-          <span class="qa-label">Income</span>
-        </button>
+        <!-- v6.11.97 — "Income" (banked) quick-add card retired. Tea income is
+             recorded via Sales -> Tea -> Green Leaf; the banked input is gone.
+             Historical banked records remain viewable under Records -> filter
+             "Banked Income". Reversible: restore the button to re-enable. -->
       </div>
     </div>
 
@@ -4071,6 +4072,18 @@
     <button class="submit" type="button" onclick="openAddPanel('crops','maize-harvest')">🌽 Log harvest</button>
   </section>
 
+  <!-- v6.11.111 — Coffee hub. Read-only delivered→settled view fed by
+       STATE.coffeeProduction. Delivery logging (Add → Crops → ☕ Delivery)
+       and settlement arrive in the Phase 3/4 drop. No "expected" column:
+       coffee value is auction-dependent, stamped only at settlement. -->
+  <section class="panel" id="panel-coffee">
+    <div class="section-head"><h3>☕ Coffee</h3></div>
+    <div id="coffee-summary-card" class="calc-card" style="margin-bottom:0.8rem"></div>
+    <div id="coffee-coop-card" class="calc-card" style="margin-bottom:0.8rem"></div>
+    <button class="submit" type="button" onclick="openAddPanel('crops','coffee-production')">☕ Log delivery</button>
+    <button class="submit" type="button" style="margin-top:0.6rem" onclick="openAddPanel('crops','coffee-settlement')">💰 Record settlement</button>
+  </section>
+
   <!-- ADD -->
   <section class="panel" id="panel-add">
     <div class="biz-toggle">
@@ -4083,7 +4096,9 @@
     <div class="kind-toggle" id="kind-toggle-tea">
       <button class="active" data-kind="greenleaf">Plucker Entry</button>
       <button data-kind="actual">Actuals</button>
-      <button data-kind="banked">Banked</button>
+      <!-- v6.11.99 — "Banked" tea kind removed: tea income is recorded via
+           Sales -> Tea -> Green Leaf; the banked input is retired. History
+           remains under Records -> filter "Banked Income". -->
     </div>
 
     <div class="kind-toggle" id="kind-toggle-poultry" style="display:none">
@@ -4099,6 +4114,8 @@
          harvest); coffee delivery joins here later. -->
     <div class="kind-toggle" id="kind-toggle-crops" style="display:none">
       <button class="active" data-kind="maize-harvest">🌽 Harvest</button>
+      <button data-kind="coffee-production">☕ Delivery</button>
+      <button data-kind="coffee-settlement">💰 Settle</button>
     </div>
 
     <!-- v5.9.1 — Expenses kind-toggle removed (only one child = redundant nav layer).
@@ -4340,9 +4357,12 @@
       <div class="field"><label id="y-cohort-label">Cohort</label>
         <select id="y-cohort"><option value="">— Pick a stage first —</option></select>
       </div>
-      <div class="pair">
+      <!-- v6.11.102 — Quantity · Unit price · Unit (3-up). Operator enters the unit
+           price; Amount auto-computes (qty × price − discount) and locks. No typed total. -->
+      <div class="pair" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem">
         <div class="field"><label>Quantity</label><input type="number" id="y-quantity" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
         <div class="field"><label>Unit</label><select id="y-unit"></select></div>
+        <div class="field"><label id="y-unitprice-label">Unit price (Ksh)</label><input type="number" id="y-unitprice" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
       </div>
       <!-- v6.11.77 — Multi-batch egg sale (Faith, 05 Jun 2026): when one batch
            can't cover the sale (8 trays needed, 01 Jun holds 7), add more source
@@ -4355,7 +4375,19 @@
         <button type="button" id="y-add-source" style="background:none;border:1px dashed #c9c2b6;border-radius:0.5rem;padding:0.45rem 0.7rem;font-family:'Fraunces',serif;font-size:0.95rem;cursor:pointer;opacity:0.85;margin-top:0.3rem">+ Sell from another batch</button>
         <div id="y-extra-tally" style="font-size:0.85rem;opacity:0.75;margin-top:0.35rem"></div>
       </div>
-      <div class="field"><label>Amount (Ksh)</label><input type="number" id="y-amount" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+      <!-- v6.11.102 — Discount (Ksh) · Amount. Amount is computed (qty × unit price
+           − discount) and locked for sales; Gift keeps amount 0, editable. -->
+      <div class="pair">
+        <div class="field"><label>Discount (Ksh)</label><input type="number" id="y-discount" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+        <div class="field"><label>Amount (Ksh)</label><input type="number" id="y-amount" inputmode="decimal" step="0.01" min="0" placeholder="0" style="font-family:'Fraunces',serif;font-size:1.1rem"></div>
+      </div>
+      <div id="y-calc-line" style="display:none;font-size:0.8rem;color:var(--brass);margin:-0.15rem 0 0.4rem;font-family:'IBM Plex Mono',monospace"></div>
+      <!-- v6.11.102 — Discount reason: shown only when discount>0, required before submit.
+           Control_Panel DISCOUNT_REASONS (dropdown, not free text). Not persisted — an event. -->
+      <div class="field" id="y-discount-reason-field" style="display:none">
+        <label>Discount reason</label>
+        <select id="y-discount-reason"><option value="">— Select reason —</option></select>
+      </div>
       <div class="field"><label>Payment method</label><select id="y-payment"></select></div>
       <!-- v6.11.54 — Strict Destination control replaces free-text buyer
            (Cheison 02 Jun 2026 Verden: "Delete the posting by…" landed in this
@@ -4418,6 +4450,104 @@
       </div>
       <div class="field" style="margin-top:0.7rem"><label>Notes (optional)</label><input type="text" id="mh-notes" placeholder="e.g. moisture, store location" autocomplete="off"></div>
       <button class="submit" id="mh-submit" onclick="submitMaizeHarvest()" disabled>Record Harvest</button>
+    </div>
+
+    <!-- v6.11.112 — Coffee delivery (Phase 3). Kg ONLY: a delivery carries no
+         value (auction-dependent). Cooperatives from COFFEE_COOPERATIVES, forms
+         from PRODUCTS_OLOMOTITCOFFEE. Submits 'coffee-production' to the v5.0.83
+         gate, which stays dark (rejects + queues) until COFFEE_PRODUCTION=TRUE.
+         Offline-queued on failure, exactly like maize harvest. -->
+    <div id="coffee-production-kind" style="display:none">
+      <div class="batch-instructions">Record a coffee delivery to a cooperative — kg only. Value is set later, after the Mombasa auction settles. Keep date/cooperative/form to log several loads quickly.</div>
+      <div class="field"><label>Date</label><input type="date" id="cd-date" onchange="validateCoffeeDelivery()"></div>
+      <div class="pair">
+        <div class="field"><label>Cooperative</label><select id="cd-coop" onchange="validateCoffeeDelivery()"><option value="">— Cooperative —</option></select></div>
+        <div class="field"><label>Form</label><select id="cd-form" onchange="validateCoffeeDelivery()"><option value="">— Form —</option></select></div>
+      </div>
+      <div class="pair">
+        <div class="field"><label>Weight (kg)</label><input type="number" id="cd-kg" inputmode="decimal" step="0.01" min="0" placeholder="0" oninput="validateCoffeeDelivery()"></div>
+        <div class="field"><label>Delivered by</label><select id="cd-by"></select></div>
+      </div>
+      <div class="field" style="margin-top:0.7rem"><label>Slip ref (optional)</label><input type="text" id="cd-slip" placeholder="delivery slip #" autocomplete="off"></div>
+      <div class="field" style="margin-top:0.7rem"><label>Notes (optional)</label><input type="text" id="cd-notes" placeholder="e.g. moisture, vehicle" autocomplete="off"></div>
+      <button class="submit" id="cd-submit" onclick="submitCoffeeDelivery()" disabled>Record Delivery</button>
+    </div>
+
+    <!-- v6.11.113 — Coffee settlement (Phase 4). The cooperative's single
+         post-auction lump. Posts as a Revenue sale, then fires 'coffee-settle'
+         to stamp that co-op's pending deliveries settled at realized price/kg
+         (lump ÷ kg). Per cooperative. Online-only (the settle reads the sale
+         server-side), no "expected" — realized is derived after the fact. -->
+    <div id="coffee-settlement-kind" style="display:none">
+      <div class="batch-instructions">Record a cooperative's auction settlement — the single lump received after Mombasa closes. It posts as Revenue and back-fills the realized price/kg across that cooperative's pending deliveries.</div>
+      <div class="field"><label>Cooperative</label><select id="cs-coop" onchange="updateCoffeeSettlementPreview()"><option value="">— Cooperative —</option></select></div>
+      <div id="cs-preview" style="font-size:0.82rem;opacity:0.85;margin:0.1rem 0 0.6rem;font-family:'IBM Plex Mono',monospace"></div>
+      <div class="field"><label>Date received</label><input type="date" id="cs-date" onchange="validateCoffeeSettlement()"></div>
+      <div class="pair">
+        <div class="field"><label>Amount (Ksh)</label><input type="number" id="cs-amount" inputmode="decimal" step="0.01" min="0" placeholder="0" oninput="updateCoffeeSettlementPreview()"></div>
+        <div class="field"><label>Method</label><select id="cs-method" onchange="validateCoffeeSettlement()">
+          <option value="BANK">Bank transfer</option>
+          <option value="PAYBILL">M-Pesa PAYBILL</option>
+          <option value="TILL">M-Pesa TILL</option>
+          <option value="CASH">Cash</option>
+        </select></div>
+      </div>
+      <div class="field" style="margin-top:0.7rem"><label>Reference (optional)</label><input type="text" id="cs-ref" placeholder="settlement / payment ref" autocomplete="off"></div>
+      <button class="submit" id="cs-submit" onclick="submitCoffeeSettlement()" disabled>Record Settlement</button>
+    </div>
+
+    <!-- v6.11.87 — FLOCK HEALTH (manual-first). A NON-FINANCIAL observation entry —
+         it records what's seen in the flock and never touches revenue/expense/equity.
+         Submits action 'flock-health' to the gate (backend v5.0.70); offline-queued
+         on failure like every other write, with loud feedback (no silent loss). The
+         on-device AI layer will later pre-fill Condition + Confidence; for now the
+         operator records by hand. Opened via openFlockHealth() (isolated — no biz or
+         kind toggle), reached from a card in the Livestock hub. -->
+    <div id="flock-health-kind" style="display:none;padding-bottom:5rem">
+      <div class="batch-instructions">One observation per house / flock — condition, severity, action.</div>
+      <!-- v6.11.93 — AI scan (beta, gated). Inert until a validated model + the
+           Control_Panel FLOCK_AI_MODEL_URL flag is installed; degrades to manual.
+           The photo is used for on-device inference only — never uploaded or stored. -->
+      <div class="field" style="margin-top:0.5rem">
+        <!-- v6.11.104 — two photo paths: live camera (capture="environment") AND
+             storage upload (no capture). Some phones forced the camera and never
+             offered the gallery, so Faith's separately-taken photos couldn't be
+             scanned. Both buttons feed the same handler; the photo is used for
+             on-device inference only — never uploaded or stored. -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem">
+          <button type="button" class="export-btn" id="fh-scan-btn" onclick="document.getElementById('fh-photo').click()">📷 Take photo</button>
+          <button type="button" class="export-btn" id="fh-upload-btn" onclick="document.getElementById('fh-photo-upload').click()">🖼️ Upload photo</button>
+        </div>
+        <input type="file" id="fh-photo" accept="image/*" capture="environment" style="display:none" onchange="onFlockPhotoChosen(event)">
+        <input type="file" id="fh-photo-upload" accept="image/*" style="display:none" onchange="onFlockPhotoChosen(event)">
+        <div id="fh-ai-result" style="display:none;margin-top:0.5rem;padding:0.6rem 0.7rem;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:0.82rem;line-height:1.45"></div>
+      </div>
+      <div class="field"><label>Date</label><input type="date" id="fh-date" onchange="validateFlockHealth()"></div>
+      <div class="pair">
+        <div class="field"><label>Business unit</label><select id="fh-unit" onchange="validateFlockHealth()"><option value="">— Unit —</option></select></div>
+        <div class="field"><label>House / flock</label><select id="fh-house" onchange="validateFlockHealth()"><option value="">— House —</option></select></div>
+      </div>
+      <div class="field"><label>Cohort (optional)</label><select id="fh-cohort"><option value="">— Cohort (optional) —</option></select></div>
+      <div class="pair">
+        <div class="field"><label>Condition</label><select id="fh-condition" onchange="validateFlockHealth()"><option value="">— Condition —</option></select></div>
+        <div class="field"><label>Severity (optional)</label><select id="fh-severity"><option value="">—</option><option value="Mild">Mild</option><option value="Moderate">Moderate</option><option value="Severe">Severe</option></select></div>
+      </div>
+      <div class="pair">
+        <div class="field"><label>Birds affected (optional)</label><input type="number" id="fh-count" inputmode="numeric" step="1" min="0" placeholder="" autocomplete="off"></div>
+        <div class="field"><label>Action taken (optional)</label><select id="fh-action"><option value="">— Action taken (optional) —</option></select></div>
+      </div>
+      <div class="field" style="margin-top:0.7rem"><label>Remark (optional)</label><select id="fh-notes"><option value="">— Remark (optional) —</option></select></div>
+      <button class="submit" id="fh-submit" onclick="submitFlockHealth()" disabled>Record Observation</button>
+
+      <!-- v6.11.90 — Flock Health history (read-only view of STATE.flockHealth,
+           synced from the Flock_Health sheet). A 30-day condition tally surfaces
+           spikes (e.g. several 'Dead' or 'Coccidiosis'); the list shows recent
+           observations. Non-financial; never enters any rollup. -->
+      <div class="section" id="fh-recent-section" style="display:none;margin-top:1.2rem">
+        <div class="section-head"><h3>Recent observations</h3><span class="meta" id="fh-recent-count">0</span></div>
+        <div id="fh-recent-tally" class="meta" style="margin-bottom:0.5rem"></div>
+        <div id="fh-recent-list"></div>
+      </div>
     </div>
 
     <div id="egg-collection-kind" style="display:none">
@@ -4673,11 +4803,6 @@
         <div class="field"><label>Stage</label>
           <select id="mt-stage">
             <option value="">— Stage —</option>
-            <option value="Chicks 1–7 days">Chicks 1–7 days</option>
-            <option value="Chicks 7–28 days">Chicks 8–28 days</option>
-            <option value="Growers">Growers</option>
-            <option value="Cockerels">Cockerels</option>
-            <option value="Layers">Layers</option>
           </select>
         </div>
       </div>
@@ -4839,8 +4964,9 @@
           </div>
         </div>
 
-        <!-- Quantity row — labeled dynamically based on product context -->
-        <div class="pair">
+        <!-- v6.11.101 — Quantity · Unit price · Unit (3-up). Unit price drives a
+             computed, LOCKED Amount for counted goods (no free-typed prices). -->
+        <div class="pair" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.6rem">
           <div class="field"><label id="s-qty-label">Quantity</label><input type="number" id="s-qty" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
           <div class="field">
             <label>Unit</label>
@@ -4858,14 +4984,28 @@
               <option value="lumpsum">lump sum (no qty)</option>
             </select>
           </div>
+          <div class="field"><label id="s-unitprice-label">Unit price (Ksh)</label><input type="number" id="s-unitprice" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
         </div>
 
-        <div class="field"><label>Amount received (Ksh)</label><input type="number" id="s-amount" inputmode="decimal" step="0.01" min="0" placeholder="0" style="font-family:'Fraunces',serif;font-size:1.1rem"></div>
+        <!-- v6.11.101 — Discount (Ksh) · Amount. Amount is computed (qty × unit
+             price − discount) and read-only for counted goods. -->
+        <div class="pair">
+          <div class="field"><label>Discount (Ksh)</label><input type="number" id="s-discount" inputmode="decimal" step="0.01" min="0" placeholder="0"></div>
+          <div class="field"><label>Amount received (Ksh)</label><input type="number" id="s-amount" inputmode="decimal" step="0.01" min="0" placeholder="0" style="font-family:'Fraunces',serif;font-size:1.1rem"></div>
+        </div>
+
+        <!-- v6.11.101 — Discount reason: shown only when a discount is applied,
+             required before submit. Control_Panel DISCOUNT_REASONS (dropdown, not
+             free text). Captured at entry for governance; not persisted (event). -->
+        <div class="field" id="s-discount-reason-field" style="display:none">
+          <label>Discount reason</label>
+          <select id="s-discount-reason"><option value="">— Select reason —</option></select>
+        </div>
 
         <!-- Auto-prefill / variance row — shown when expected math is known (e.g. tea) -->
         <div id="s-expected-row" class="calc-card" style="display:none;margin-top:0.4rem;padding:0.6rem 0.8rem">
           <div style="display:flex;justify-content:space-between;align-items:baseline">
-            <span class="lbl" style="font-size:0.78rem">Expected net (auto)</span>
+            <span class="lbl" style="font-size:0.78rem">Calculated (auto)</span>
             <span style="font-family:'IBM Plex Mono',monospace;font-size:0.9rem" id="s-expected-val">Ksh —</span>
           </div>
           <div id="s-variance-line" style="display:none;margin-top:0.3rem;font-size:0.75rem;color:var(--brass)"></div>
@@ -6350,36 +6490,27 @@
       </svg>
       <span>Sales</span>
     </button>
+    <!-- v6.11.84 — Expenses: first-class bottom-nav tab, the money-OUT twin of
+         Sales, sitting between Sales and Insights. Opens the shared expense
+         surface (single + batch). Fills the slot Admin vacated in v6.11.83. -->
+    <button data-view="expenses" aria-label="Expenses">
+      <svg viewBox="0 0 24 24">
+        <ellipse cx="12" cy="6" rx="8" ry="3"/>
+        <path d="M4 6v6c0 1.6 3.6 3 8 3s8-1.4 8-3"/>
+        <path d="M4 12v6c0 1.6 3.6 3 8 3s8-1.4 8-3"/>
+      </svg>
+      <span>Expenses</span>
+    </button>
     <button data-view="insights" aria-label="Insights">
       <svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-6M22 20H2"/></svg>
       <span>Insights</span>
     </button>
-    <!-- v6.11.7 — Admin lives in bottom-nav as sole entry point. Carries the 
-         full data-lock-state machine (locked/admin/open) wired by 
-         wireLockIconAuth() — triple-tap auth gate for operators, single-tap 
-         pass-through for authenticated admins. The previously-redundant 
-         header Admin button has been removed (Cheison 27 May 2026 Verden):
-         "two instances of Admin is one too many." Sealed § 7.x: one Admin 
-         entry, one gate, one cluster slot. -->
-    <button data-view="admin" id="nav-settings" data-lock-state="locked" aria-label="Admin" title="Admin">
-      <svg class="nav-lock-svg" viewBox="0 0 24 24" aria-hidden="true">
-        <g class="nav-lock-icon-locked">
-          <path d="M7 11V7a5 5 0 0 1 10 0v4" fill="none"/>
-          <rect x="5" y="11" width="14" height="10" rx="2"/>
-          <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
-        </g>
-        <g class="nav-lock-icon-admin">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/>
-        </g>
-        <g class="nav-lock-icon-open">
-          <path d="M7 11V7a5 5 0 0 1 9.5-2" fill="none"/>
-          <rect x="5" y="11" width="14" height="10" rx="2"/>
-          <circle cx="12" cy="16" r="1.2" fill="currentColor"/>
-        </g>
-      </svg>
-      <span>Admin</span>
-    </button>
+    <!-- v6.11.83 — Admin RELOCATED to the header (left of refresh), reversing
+         the v6.11.7 consolidation (Cheison 06 Jun 2026 Verden). The bottom nav
+         is now the 5 thumb-frequent ground-ops views (Home/Crops/Livestock/
+         Sales/Insights). Admin is a principal control, not a daily-operator one,
+         so it lives up top. Same #nav-settings element moved intact, not
+         duplicated — "one Admin entry, one gate" still holds. -->
   </nav>
 </div>
 
@@ -6909,6 +7040,7 @@ function _clusterTargetForUnit(label) {
   if (/\b(dairy|cow|cattle)\b/.test(s)) return 'cows';
   if (/\b(dorper|sheep)\b/.test(s)) return 'sheep';
   if (/\bmaize\b/.test(s)) return 'maize';   // v6.11.63 — Maize now has its own hub panel
+  if (/\bcoffee\b/.test(s)) return 'coffee'; // v6.11.111 — Coffee now has its own hub panel
   return 'other';
 }
 
@@ -7080,6 +7212,76 @@ function renderMaizePanel() {
   setC('maize-plot-card', 'Per plot · cost & yield', plotHtml);
 }
 
+/* ============================================================
+   v6.11.111 — COFFEE Phase 2 (presentation, read-only).
+   Both surfaces read STATE.coffeeProduction (hydrated from the v5.0.83
+   doGet). Coffee carries NO "expected" value: a delivery is kg-only until
+   the cooperative settles after the Mombasa auction, when realized price/kg
+   is back-filled. Per-cooperative — Kabunyeria ≠ Kapkiyai.
+   ============================================================ */
+function _coffeeRollup() {
+  const rows = Array.isArray(STATE.coffeeProduction) ? STATE.coffeeProduction : [];
+  let pendingKg = 0, settledKg = 0, received = 0;
+  const byCoop = {};
+  rows.forEach(function (r) {
+    const kg = Number(r.kg) || 0;
+    const coop = r.cooperative || '\u2014';
+    if (!byCoop[coop]) byCoop[coop] = { pending: 0, settled: 0, received: 0 };
+    if (String(r.status || '').toLowerCase() === 'settled') {
+      settledKg += kg; byCoop[coop].settled += kg;
+      if (r.realized_price_kg != null) { received += kg * Number(r.realized_price_kg); byCoop[coop].received += kg * Number(r.realized_price_kg); }
+    } else {
+      pendingKg += kg; byCoop[coop].pending += kg;
+    }
+  });
+  return { rows: rows, pendingKg: pendingKg, settledKg: settledKg, received: received, byCoop: byCoop,
+           avg: settledKg > 0 ? received / settledKg : null };
+}
+
+function _coffeeKg(n) { return (Number(n) % 1 === 0 ? Number(n) : Number(n).toFixed(1)) + ' kg'; }
+
+function populateCoffeeCard() {
+  const card = document.querySelector('.hero-metric-card.hmc-coffee');
+  if (!card) return;
+  const farmsCoffee = (typeof tenantBusinessUnits === 'function') && tenantBusinessUnits().some(function (u) { return /coffee/i.test(u); });
+  const roll = _coffeeRollup();
+  if (!farmsCoffee && roll.rows.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = '';
+  const totalKg = roll.pendingKg + roll.settledKg;
+  const setT = function (id, v) { const el = document.getElementById(id); if (el) el.textContent = v; };
+  setT('hero-coffee-val', _coffeeKg(totalKg));
+  setT('hero-coffee-sub', roll.rows.length ? (_coffeeKg(roll.pendingKg) + ' pending · ' + _coffeeKg(roll.settledKg) + ' settled') : 'no deliveries yet');
+  setT('hero-coffee-pending', _coffeeKg(roll.pendingKg));
+  setT('hero-coffee-settled', _coffeeKg(roll.settledKg));
+  setT('hero-coffee-received', 'Ksh ' + Math.round(roll.received).toLocaleString());
+  setT('hero-coffee-avg', roll.avg != null ? (roll.avg.toFixed(1) + '/kg') : '\u2014');
+}
+
+function renderCoffeePanel() {
+  const fmt = function (n) { return 'Ksh ' + Math.round(Number(n) || 0).toLocaleString(); };
+  const rowLine = function (l, r, extra) { return '<div style="display:flex;justify-content:space-between;padding:0.22rem 0;' + (extra || '') + '"><span>' + l + '</span><span style="font-family:\'IBM Plex Mono\',monospace">' + r + '</span></div>'; };
+  const label = function (t) { return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--forest-dark);margin-bottom:0.5rem">' + t + '</div>'; };
+  const setC = function (id, l, body) { const el = document.getElementById(id); if (el) el.innerHTML = label(l) + body; };
+  const roll = _coffeeRollup();
+
+  const summary = rowLine('Delivered · awaiting auction', _coffeeKg(roll.pendingKg))
+    + rowLine('Settled', _coffeeKg(roll.settledKg))
+    + rowLine('Received', fmt(roll.received))
+    + rowLine('Realized avg', roll.avg != null ? roll.avg.toFixed(2) + ' Ksh/kg' : '\u2014', 'border-top:1px solid rgba(0,0,0,0.1);font-weight:600;margin-top:0.2rem;padding-top:0.35rem');
+  setC('coffee-summary-card', 'Deliveries \u2192 settlement', roll.rows.length ? summary : '<div style="opacity:0.7">No deliveries logged yet.</div>');
+
+  const coops = Object.keys(roll.byCoop).sort();
+  const coopHtml = coops.length ? coops.map(function (c) {
+    const b = roll.byCoop[c];
+    const a = b.settled > 0 ? (b.received / b.settled) : null;
+    return '<div style="padding:0.3rem 0;border-bottom:1px solid rgba(0,0,0,0.06)">'
+      + rowLine('<strong>' + escapeHtml(c) + '</strong>', _coffeeKg(b.pending + b.settled))
+      + '<div style="font-size:0.78rem;opacity:0.7">' + _coffeeKg(b.pending) + ' pending · ' + _coffeeKg(b.settled) + ' settled'
+      + (a != null ? ' · ' + a.toFixed(2) + ' Ksh/kg' : '') + '</div></div>';
+  }).join('') : '<div style="opacity:0.7">\u2014</div>';
+  setC('coffee-coop-card', 'Per cooperative', coopHtml);
+}
+
 /* Render Crops hub. v6.11.11 — cards generated from BUSINESS_UNITS 
    Control_Panel value (filtered to non-livestock units). Each tenant sees 
    only what their CP declares — no Sinonin Chelabaal leaking onto Birei 
@@ -7104,6 +7306,17 @@ function renderLivestockHub() {
     grid.innerHTML = '<div class="sales-card-empty">No livestock business units configured. Set BUSINESS_UNITS in Control_Panel.</div>';
   } else {
     grid.innerHTML = units.map(_buildClusterCard).join('');
+  }
+  // v6.11.87 — Flock Health entry card (non-financial observations), appended after
+  // the per-unit cluster cards. Matches cluster-card markup; opens the isolated
+  // Flock Health surface. No data-cluster-target, so _wireClusterCards ignores it
+  // and its inline onclick drives it.
+  if (grid.querySelector('.sales-card')) {
+    grid.insertAdjacentHTML('beforeend',
+      '<button class="sales-card" type="button" onclick="openFlockHealth()">' +
+      '<span class="sc-icon">\uD83E\uDE7A</span>' +
+      '<span class="sc-label">Flock Health</span>' +
+      '</button>');
   }
   _wireClusterCards();
 }
@@ -7282,8 +7495,8 @@ function _iconForUnit(label) {
 }
 
 function _iconForProduct(unitLabel, productLabel) {
-  const u = String(unitLabel || '').toLowerCase();
-  const p = String(productLabel || '').toLowerCase();
+  const u = String(unitLabel || '').toLowerCase().replace(/\s+/g, '');
+  const p = String(productLabel || '').toLowerCase().replace(/\s+/g, '');
   // Tea-specific products
   if (u.indexOf('tea') !== -1) {
     if (p.indexOf('greenleaf') !== -1) return '🍃';
@@ -7329,7 +7542,15 @@ function salesProductsFor(unitSlug, unitLabel) {
    VARIANTS_TEA_GREENLEAF. Empty/missing means no L3 — skip straight to form. */
 function salesVariantsFor(unitSlug, productSlug) {
   const key = 'VARIANTS_' + unitSlug + '_' + productSlug;
-  const raw = tcfg(key, '');
+  let raw = tcfg(key, '');
+  // v6.11.110 — Coffee L3 fallback. The cooperative is the delivery destination
+  // for EVERY coffee form (Wet Cherry, Depulped beans, …). Rather than copying
+  // the roster into VARIANTS_OLOMOTITCOFFEE_<each form>, any coffee unit with no
+  // form-specific VARIANTS row reads the canonical COFFEE_COOPERATIVES key — the
+  // same roster the destination dropdown uses. Single source of truth.
+  if ((!raw || typeof raw !== 'string' || !raw.trim()) && String(unitSlug || '').indexOf('COFFEE') !== -1) {
+    raw = tcfg('COFFEE_COOPERATIVES', '');
+  }
   if (!raw || typeof raw !== 'string') return [];
   return raw.split(',').map(function (s) {
     const label = s.trim();
@@ -7340,8 +7561,8 @@ function salesVariantsFor(unitSlug, productSlug) {
 
 /* Default unit suggestion for the form's Unit dropdown, based on context. */
 function _defaultUnitForContext(unitLabel, productLabel) {
-  const u = String(unitLabel || '').toLowerCase();
-  const p = String(productLabel || '').toLowerCase();
+  const u = String(unitLabel || '').toLowerCase().replace(/\s+/g, '');
+  const p = String(productLabel || '').toLowerCase().replace(/\s+/g, '');
   if (u.indexOf('tea') !== -1 && p.indexOf('greenleaf') !== -1) return 'kg';
   if (u.indexOf('tea') !== -1 && p.indexOf('seedling') !== -1) return 'number';
   if (u.indexOf('poultry') !== -1 && p.indexOf('egg') !== -1) return 'trays';
@@ -7357,6 +7578,34 @@ function _defaultUnitForContext(unitLabel, productLabel) {
   return 'number';
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// v6.11.95 — Auto-derive the "For Period" field from the sale date + product.
+// Cheison: poultry uses the date's month (handled by the mirror); tea Green
+// Leaf is paid in arrears so its period is the PREVIOUS month; tea Seedlings
+// (and any other tea product) use the date's own month. Non-tea units return
+// '' so the field stays manual/blank as before. Overridable — operator can
+// still type a different period. Re-runs when the date input changes.
+// ─────────────────────────────────────────────────────────────────────
+function _autoPeriodFor(unitLabel, productLabel, dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  const u = String(unitLabel || '').toLowerCase().replace(/\s+/g, '');
+  const p = String(productLabel || '').toLowerCase().replace(/\s+/g, '');
+  if (u.indexOf('tea') === -1) return '';   // tea only; others stay manual
+  let m = d.getMonth(), y = d.getFullYear();
+  if (p.indexOf('greenleaf') !== -1) { m -= 1; if (m < 0) { m = 11; y -= 1; } }  // GL arrears → previous month
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return MONTHS[m] + ' ' + y;
+}
+function _refreshSalePeriod() {
+  const c = SALES_CASCADE;
+  if (!c || !c.unit || !c.product) return;
+  const el = document.getElementById('s-period');
+  const dEl = document.getElementById('s-date');
+  if (el) el.value = _autoPeriodFor(c.unit.label, c.product.label, (dEl && dEl.value) || '');
+}
+
 /* ============================================================
    v6.11.61 (M2 step 1) — CONTEXT-AWARE UNIT OPTIONS
    ============================================================
@@ -7368,10 +7617,10 @@ function _defaultUnitForContext(unitLabel, productLabel) {
    a new tenant unit never has a measure wrongly hidden. */
 const SALES_UNIT_LABELS = {
   kg: 'kg', litres: 'litres', trays: 'trays (30 eggs)', number: 'number / count',
-  bags: 'bags', debe: 'debe', gorogoro: 'gorogoro', hours: 'hours',
+  bags: 'bags', sack: 'sack', debe: 'debe', gorogoro: 'gorogoro', hours: 'hours',
   nights: 'nights', lumpsum: 'lump sum (no qty)'
 };
-const SALES_UNIT_ALL = ['kg','litres','trays','number','bags','debe','gorogoro','hours','nights','lumpsum'];
+const SALES_UNIT_ALL = ['kg','litres','trays','number','bags','sack','debe','gorogoro','hours','nights','lumpsum'];
 
 function _unitsForContext(unitLabel, productLabel) {
   // Control_Panel override: UNITS_<UNIT> (e.g. UNITS_MAIZE = "bags,kg,debe,gorogoro").
@@ -7393,7 +7642,7 @@ function _unitsForContext(unitLabel, productLabel) {
   if (u.indexOf('dairy') !== -1 && p.indexOf('milk') !== -1) return ['litres'];
   if (u.indexOf('dairy') !== -1) return ['number', 'litres'];
   if (u.indexOf('dorper') !== -1 || u.indexOf('sheep') !== -1 || u.indexOf('goat') !== -1) return ['number'];
-  if (u.indexOf('coffee') !== -1) return ['kg', 'number'];
+  if (u.indexOf('coffee') !== -1) return ['kg', 'sack'];   // v6.11.110 — beans aren't counted; sack added, number dropped
   if (u.indexOf('maize') !== -1) return ['bags', 'kg', 'debe', 'gorogoro'];
   if (u.indexOf('training') !== -1) return ['lumpsum'];
   if (u.indexOf('hospitality') !== -1 || u.indexOf('room') !== -1) return ['nights', 'lumpsum'];
@@ -7416,6 +7665,7 @@ function _defaultRevTypeForContext(unitLabel, productLabel) {
   const p = String(productLabel || '').toLowerCase();
   if (u.indexOf('tea') !== -1 && p.indexOf('greenleaf') !== -1) return 'Revenue';
   if (u.indexOf('dairy') !== -1 && p.indexOf('milk') !== -1) return 'Revenue'; // typically bulk to KCC
+  if (u.indexOf('coffee') !== -1) return 'Revenue'; // v6.11.110 — bulk delivery to cooperative (direct settlement)
   return 'Income';
 }
 
@@ -7560,15 +7810,25 @@ function _enterSalesLevel4() {
   document.getElementById('s-date').value = new Date().toISOString().slice(0, 10);
   document.getElementById('s-qty').value = '';
   document.getElementById('s-amount').value = '';
-  document.getElementById('s-period').value = '';
+  // v6.11.101 — reset the unit-price calculator fields for the new context
+  document.getElementById('s-unitprice').value = '';
+  document.getElementById('s-discount').value = '';
+  var _drEl = document.getElementById('s-discount-reason'); if (_drEl) _drEl.value = '';
+  var _drField = document.getElementById('s-discount-reason-field'); if (_drField) _drField.style.display = 'none';
+  var _amtReset = document.getElementById('s-amount'); if (_amtReset) { _amtReset.readOnly = false; _amtReset.style.opacity = ''; }
+  _populateDiscountReasons();
   document.getElementById('s-reference').value = '';
   document.getElementById('s-notes').value = '';
   document.getElementById('s-method').value = '';
+  // v6.11.95 — auto-derive For Period (tea GL = previous month, else date's month)
+  _refreshSalePeriod();
+  document.getElementById('s-date').onchange = _refreshSalePeriod;
   if (typeof renderSaleDestination === 'function') renderSaleDestination(); // v6.11.54 step 3 — builds list + pre-selects factory variant
 
   // Unit options + default for this context (M2 step 1 — only relevant measures)
   _populateSalesUnitOptions(c.unit.label, c.product.label);
   document.getElementById('s-unit').value = _defaultUnitForContext(c.unit.label, c.product.label);
+  _lastSaleUnit = document.getElementById('s-unit').value;   // v6.11.101 — sync so first preview doesn't false-clear
 
   // Revenue type default
   document.getElementById('s-revtype').value = _defaultRevTypeForContext(c.unit.label, c.product.label);
@@ -7908,7 +8168,7 @@ async function _recStampSale(saleId, typeLabel, number) {
   // Durable server stamp so it survives cloud re-hydration.
   if (navigator.onLine && typeof TENANT_APPS_SCRIPT_URL !== 'undefined' && TENANT_APPS_SCRIPT_URL) {
     try {
-      await fetch(TENANT_APPS_SCRIPT_URL, {
+      await gatePost_(TENANT_APPS_SCRIPT_URL, {
         method: 'POST', mode: 'cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({
@@ -8018,7 +8278,7 @@ async function _recAllocateNumber(type) {
   if (!navigator.onLine) return { ok: false, offline: true };
   if (typeof TENANT_APPS_SCRIPT_URL === 'undefined' || !TENANT_APPS_SCRIPT_URL) return { ok: false };
   try {
-    const res = await fetch(TENANT_APPS_SCRIPT_URL, {
+    const res = await gatePost_(TENANT_APPS_SCRIPT_URL, {
       method: 'POST', mode: 'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -8249,6 +8509,22 @@ function renderSalesPanel() {
   if (typeof initReceiptFeature === 'function') initReceiptFeature();
 }
 
+/* v6.11.101 — Sale unit-price calculator: module state + helpers. */
+let _lastSaleUnit = null;
+function _round2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+
+/* Discount-reason options from Control_Panel DISCOUNT_REASONS (comma list).
+   Falls back to the three standard concession categories so it works unconfigured.
+   Dropdown only — never free text (keeps with the de-democratised-input discipline). */
+function _populateDiscountReasons(selId) {
+  const sel = document.getElementById(selId || 's-discount-reason');
+  if (!sel) return;
+  const raw = tcfg('DISCOUNT_REASONS', 'Trade discount, Loyalty premium, Promotion');
+  const opts = String(raw || '').split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  sel.innerHTML = '<option value="">\u2014 Select reason \u2014</option>'
+    + opts.map(function (o) { return '<option value="' + escapeHtml(o) + '">' + escapeHtml(o) + '</option>'; }).join('');
+}
+
 /* Live preview + validation on form fields */
 function _updateSalesPreview() {
   const date = document.getElementById('s-date').value;
@@ -8259,22 +8535,71 @@ function _updateSalesPreview() {
   // hasn't typed an amount yet, fill the amount field with 0. Avoids 
   // forcing them to type 0 for the truthful "no payment" record (Cheison's
   // catch — typing 1 to activate Record Sale lied to the books).
-  const amtEl = document.getElementById('s-amount');
-  if (method === 'GIFT' && amtEl.value === '') {
-    amtEl.value = '0';
-  }
-  const amount = parseFloat(amtEl.value) || 0;
-  
   const unitSel = document.getElementById('s-unit').value;
+  const amtEl = document.getElementById('s-amount');
+  const upEl = document.getElementById('s-unitprice');
+  const discEl = document.getElementById('s-discount');
+  const reasonField = document.getElementById('s-discount-reason-field');
+  const reasonEl = document.getElementById('s-discount-reason');
+  const expRow = document.getElementById('s-expected-row');
+
+  // v6.11.101 — Clear a stale unit price + discount when the Unit changes (a
+  // per-tray price must never silently carry over onto per-egg, etc.).
+  if (_lastSaleUnit !== null && _lastSaleUnit !== unitSel) {
+    if (upEl) upEl.value = '';
+    if (discEl) discEl.value = '';
+    if (reasonEl) reasonEl.value = '';
+  }
+  _lastSaleUnit = unitSel;
+
+  const priced = !!unitSel && unitSel !== 'lumpsum';   // counted good → calculator applies
+  const unitPrice = upEl ? (parseFloat(upEl.value) || 0) : 0;
+  let discount = discEl ? (parseFloat(discEl.value) || 0) : 0;
+  if (discount < 0) { discount = 0; if (discEl) discEl.value = ''; }
+
+  if (method === 'GIFT') {
+    // v6.11.4 — Gift = no payment is the truth → amount 0; calculator off.
+    if (amtEl.value === '') amtEl.value = '0';
+    amtEl.readOnly = false; amtEl.style.opacity = '';
+    if (reasonField) reasonField.style.display = 'none';
+    if (expRow) expRow.style.display = 'none';
+  } else if (priced) {
+    // v6.11.101 — Counted good: Amount = qty × unit price − discount, COMPUTED
+    // and LOCKED (no free-typed "price democracy"). A discount needs a reason.
+    const gross = qty * unitPrice;
+    if (discount > gross) { discount = gross; if (discEl) discEl.value = String(_round2(gross)); }
+    const net = Math.max(0, gross - discount);
+    amtEl.value = (unitPrice > 0 && qty > 0) ? String(_round2(net)) : '';
+    amtEl.readOnly = true; amtEl.style.opacity = '0.85';
+    if (reasonField) reasonField.style.display = (discount > 0) ? '' : 'none';
+    if (expRow) {
+      if (unitPrice > 0 && qty > 0) {
+        expRow.style.display = '';
+        const ev = document.getElementById('s-expected-val');
+        const ed = document.getElementById('s-deduction-detail');
+        if (ev) ev.textContent = 'Ksh ' + moneyRound(net);
+        if (ed) ed.textContent = qty.toLocaleString('en-KE') + ' \u00d7 ' + unitPrice
+          + ' = Ksh ' + moneyRound(gross)
+          + (discount > 0 ? '   \u2212 ' + moneyRound(discount) + ' (disc)' : '');
+      } else { expRow.style.display = 'none'; }
+    }
+  } else {
+    // Lump sum / amount-only revenue (Sireet dividend, training fee): free Amount.
+    amtEl.readOnly = false; amtEl.style.opacity = '';
+    if (reasonField) reasonField.style.display = 'none';
+    if (expRow) expRow.style.display = 'none';
+  }
+
+  const amount = parseFloat(amtEl.value) || 0;
   const revtype = document.getElementById('s-revtype').value;
   const buyer = _resolveSaleDest();
 
-  // Validation: date + method + amount required. Qty optional (lump-sum 
-  // sales possible — Sireet shares dividend, training fee, etc.).
-  // v6.11.4 — Gift method allows amount=0 (no payment is the truth). 
-  // Other methods require amount > 0 to guard against typo-empty submits.
+  // Validation: date + method + amount required. Qty optional (lump-sum sales
+  // possible — Sireet shares dividend, training fee, etc.). Gift allows amount=0.
+  // v6.11.101 — a discount on a counted good must carry a reason before submit.
   const amountValid = (method === 'GIFT') ? amount >= 0 : amount > 0;
-  const valid = !!date && !!method && amountValid;
+  const reasonOk = !(priced && discount > 0) || !!(reasonEl && reasonEl.value);
+  const valid = !!date && !!method && amountValid && reasonOk;
   document.getElementById('s-submit').disabled = !valid;
 
   // Quantity label update
@@ -8363,6 +8688,15 @@ async function submitSale() {
   const amountValid = (method === 'GIFT') ? amount >= 0 : amount > 0;
   if (!date || !method || !amountValid) return;
 
+  // v6.11.101 — A discount on a counted good must name a reason (governance
+  // friction; the reason is captured at entry but not persisted — it's an event).
+  const _priced = !!unitSel && unitSel !== 'lumpsum';
+  const _disc = parseFloat((document.getElementById('s-discount') || {}).value) || 0;
+  if (_priced && _disc > 0) {
+    const _rsn = document.getElementById('s-discount-reason');
+    if (!_rsn || !_rsn.value) { showToast('Select a discount reason', 2600); return; }
+  }
+
   // First-submit gibberish guard (same pattern as banked/poultry forms)
   if (typeof isSessionConfirmed === 'function' && !isSessionConfirmed('sale')) {
     const summaryHtml = '<div><strong>' + escapeHtml(c.unit.label) + ' · ' + escapeHtml(c.product.label) + (c.variant ? ' · ' + escapeHtml(c.variant.label) : '') + '</strong></div>'
@@ -8379,7 +8713,7 @@ async function submitSale() {
     date: date,
     business_unit: c.unit.label,
     product: c.product.label,
-    variant: c.variant ? c.variant.label : '',
+    variant: c.variant ? c.variant.label : (/tea/i.test(c.unit.label) ? c.product.label : ''),  // v6.11.95 — tea: Variant inherits Product
     quantity: qty || null,
     unit: unitSel || '',
     amount: amount,
@@ -8393,7 +8727,7 @@ async function submitSale() {
     receipt_type: '',
     receipt_id: '',
     receipt_issued: false,
-    recorded_from: 'PWA v6.11.36'
+    recorded_from: 'PWA ' + APP_VERSION
   };
   STATE.sales = STATE.sales || [];
   STATE.sales.push(row);
@@ -8402,9 +8736,14 @@ async function submitSale() {
   // Reset form fields (keep context — operator may want to record another in same drill)
   document.getElementById('s-qty').value = '';
   document.getElementById('s-amount').value = '';
-  document.getElementById('s-period').value = '';
+  // v6.11.101 — reset the calculator fields too
+  document.getElementById('s-unitprice').value = '';
+  document.getElementById('s-discount').value = '';
+  var _drClr = document.getElementById('s-discount-reason'); if (_drClr) _drClr.value = '';
+  var _drfClr = document.getElementById('s-discount-reason-field'); if (_drfClr) _drfClr.style.display = 'none';
   document.getElementById('s-reference').value = '';
   document.getElementById('s-notes').value = '';
+  _refreshSalePeriod();   // v6.11.95 — re-derive For Period for the kept context
   _updateSalesPreview();
   _renderRecentSalesForContext();
 
@@ -8439,11 +8778,23 @@ async function submitSale() {
 
 /* Wire form input listeners + back buttons + submit. Idempotent. */
 function _wireSalesForm() {
-  ['s-date','s-qty','s-amount','s-method','s-unit','s-revtype','s-dest-select','s-dest-new','s-period','s-reference','s-notes'].forEach(function (id) {
+  ['s-date','s-qty','s-unitprice','s-discount','s-discount-reason','s-amount','s-method','s-unit','s-revtype','s-dest-select','s-dest-new','s-period','s-reference','s-notes'].forEach(function (id) {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', _updateSalesPreview);
     el.addEventListener('change', _updateSalesPreview);
+  });
+  // v6.11.101 — Toast the computed total once the operator finishes the unit price.
+  const sUp = document.getElementById('s-unitprice');
+  if (sUp) sUp.addEventListener('blur', function () {
+    const u = document.getElementById('s-unit').value;
+    const q = parseFloat(document.getElementById('s-qty').value) || 0;
+    const p = parseFloat(sUp.value) || 0;
+    let d = parseFloat(document.getElementById('s-discount').value) || 0; if (d < 0) d = 0;
+    if (u && u !== 'lumpsum' && p > 0 && q > 0) {
+      const net = Math.max(0, q * p - d);
+      showToast(q.toLocaleString('en-KE') + ' ' + u + ' \u00d7 ' + p + ' = Ksh ' + moneyRound(net), 2600);
+    }
   });
   // v6.11.54 step 3 — payment flips Gift⇄sale (swaps the list); select toggles
   // the Add-new/Other reveal; new-input tidies on blur.
@@ -8484,6 +8835,74 @@ function cloudToLocalSale(r) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────
+// v6.11.105 — Poultry Sales deprecation, STEP 1 (shadow / instrumentation only).
+// salesMirrorToPoultry(): rebuild the STATE.poultry row shape from the Sales
+// poultry-mirror rows (business_unit 'Poultry'). cohort_id ← reference,
+// stage ← variant; id uses the SAME synthetic scheme as cloudToLocalPoultry so
+// the two sources are directly comparable. This is the eventual replacement
+// source once the diff proves clean; for now it only feeds the shadow audit.
+// Nothing in the app reads this unless Control_Panel POULTRY_SOURCE='derived'.
+function salesMirrorToPoultry(salesArr) {
+  const out = [];
+  (salesArr || []).forEach(function (s) {
+    if (!s) return;
+    if (!/poultry/i.test(String(s.business_unit || ''))) return;   // mirror rows only
+    const product = String(s.product || '');
+    const quantity = Number(s.quantity) || 0;
+    const amount = Number(s.amount) || 0;
+    out.push({
+      id: 'C-Y-' + s.date + '-' + product + '-' + quantity.toFixed(2) + '-' + amount.toFixed(2),
+      ts: s.ts || (s.date + 'T00:00:00Z'),
+      date: s.date,
+      product: product,
+      stage: s.variant || '',
+      unit: s.unit || '',
+      quantity: quantity,
+      amount: amount,
+      payment_method: s.payment_method || '',
+      buyer: s.buyer || '',
+      cohort_id: s.reference || ''
+    });
+  });
+  return out;
+}
+
+// auditPoultrySource(): diff the sheet-fed list vs the Sales-derived list on the
+// metrics that actually drive stock — eggs-sold-per-cohort, birds-sold-per-cohort,
+// row count, total amount. Logs ✓/✗ to console and stashes the result on
+// window.__poultryAudit for inspection. Pure read; changes nothing.
+function auditPoultrySource(sheetList, derivedList) {
+  const EGGS_PER_TRAY = 30;
+  const trayU = function (u) { return /tray|crate/i.test(String(u || '')); };
+  function maps(list) {
+    const egg = {}, bird = {}; let n = 0, amt = 0;
+    (list || []).forEach(function (s) {
+      if (!s) return; n++; amt += Number(s.amount) || 0;
+      const id = String(s.cohort_id || '').trim();
+      if (s.product === 'Eggs') {
+        if (id) egg[id] = (egg[id] || 0) + (Number(s.quantity) || 0) * (trayU(s.unit) ? EGGS_PER_TRAY : 1);
+      } else {
+        if (id) bird[id] = (bird[id] || 0) + (Number(s.quantity) || 0);
+      }
+    });
+    return { egg: egg, bird: bird, n: n, amt: amt };
+  }
+  const A = maps(sheetList), B = maps(derivedList);
+  const diffs = [];
+  if (A.n !== B.n) diffs.push('rowcount sheet=' + A.n + ' derived=' + B.n);
+  if (Math.round(A.amt) !== Math.round(B.amt)) diffs.push('amount sheet=' + Math.round(A.amt) + ' derived=' + Math.round(B.amt));
+  const eggIds = {}; Object.keys(A.egg).forEach(function (k) { eggIds[k] = 1; }); Object.keys(B.egg).forEach(function (k) { eggIds[k] = 1; });
+  Object.keys(eggIds).forEach(function (id) { if ((A.egg[id] || 0) !== (B.egg[id] || 0)) diffs.push('eggs[' + id + '] sheet=' + (A.egg[id] || 0) + ' derived=' + (B.egg[id] || 0)); });
+  const birdIds = {}; Object.keys(A.bird).forEach(function (k) { birdIds[k] = 1; }); Object.keys(B.bird).forEach(function (k) { birdIds[k] = 1; });
+  Object.keys(birdIds).forEach(function (id) { if ((A.bird[id] || 0) !== (B.bird[id] || 0)) diffs.push('birds[' + id + '] sheet=' + (A.bird[id] || 0) + ' derived=' + (B.bird[id] || 0)); });
+  const result = { ok: diffs.length === 0, sheetRows: A.n, derivedRows: B.n, diffs: diffs, at: new Date().toISOString() };
+  try { window.__poultryAudit = result; } catch (e) {}
+  if (result.ok) console.log('[poultry-source-audit] \u2713 sheet & derived AGREE (' + A.n + ' rows, Ksh ' + Math.round(A.amt) + ')');
+  else console.warn('[poultry-source-audit] \u2717 MISMATCH (' + diffs.length + '):', diffs);
+  return result;
+}
+
 /* v6.11.1 — pushSaleToGate. Grounded in real Apps Script protocol:
    action='sale' routes to writeSaleEntry (Apps Script v5.0.50+), which 
    calls the new appendRowGeneric primitive. Payload fields match 
@@ -8518,7 +8937,7 @@ async function pushSaleToGate(row) {
       },
       source: `PWA ${APP_VERSION} sale`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -8952,6 +9371,7 @@ const SCREEN_TITLES = {
   maize: 'Maize',   // v6.11.63 — Maize hub panel
   livestock: 'Livestock',
   sales: 'Sales',  // v6.11.0 — unified revenue-recording POS cascade
+  expenses: 'Expenses',  // v6.11.84 — first-class expense surface (money out)
   insights: 'Insights',
   admin: 'Admin',
   // Legacy view names — kept reachable for backwards compat
@@ -9095,6 +9515,42 @@ const TENANT_APPS_SCRIPT_URL = (function () {
 const CLOUD_ENDPOINT = TENANT_APPS_SCRIPT_URL;
 
 /* ============================================================
+   v6.11.107 — SECURITY FIX 3 (client half): gated write-token
+   ============================================================
+   Per-tenant write token, read from the same config.js that carries
+   appsScriptUrl: window.TENANT_CONFIG.writeToken. gatePost_ (below)
+   injects it into every gate request body. EMPTY when unconfigured →
+   gatePost_ injects nothing → behaviour is byte-identical to v6.11.106.
+   The server check (AS v5.0.80) stays INERT until REQUIRE_WRITE_TOKEN=TRUE
+   in Control_Panel, so this ships safe and only arms once BOTH sides carry
+   the matching token (config.js writeToken === Control_Panel WRITE_TOKEN).
+   NB: a token in client config is extractable from the bundle — it stops
+   casual/accidental/automated writes to the public /exec URL, not a
+   determined attacker. Real per-user auth is the heavier future fix. */
+const TENANT_WRITE_TOKEN = (function () {
+  const cfg = (typeof window !== 'undefined' && window.TENANT_CONFIG) || null;
+  return cfg && typeof cfg.writeToken === 'string' ? cfg.writeToken.trim() : '';
+})();
+
+/* Single send choke-point. Every gate-write call site was swapped to
+   gatePost_(...), so the token is injected in exactly one place and future
+   writers inherit it. Only mutates JSON bodies that carry an `action`
+   (real gate requests); GET reads and the no-cors Form fallback pass
+   straight through untouched. Never injects when TENANT_WRITE_TOKEN is ''. */
+async function gatePost_(url, opts) {
+  try {
+    if (TENANT_WRITE_TOKEN && opts && typeof opts.body === 'string') {
+      const o = JSON.parse(opts.body);
+      if (o && typeof o === 'object' && !Array.isArray(o) && o.action) {
+        o.token = TENANT_WRITE_TOKEN;
+        opts = Object.assign({}, opts, { body: JSON.stringify(o) });
+      }
+    }
+  } catch (e) { /* body not JSON (e.g. form-encoded) — leave untouched */ }
+  return fetch(url, opts);
+}
+
+/* ============================================================
    v5.0 PHASE 1 — APPS SCRIPT GATE CONFIG
    ============================================================
    The gate is the v5.0 architecture: writes route through Apps Script,
@@ -9118,7 +9574,7 @@ const USE_APPS_SCRIPT_GATE = true; // Kill switch — flip to false to bypass ga
    function so audit log entries always reflect the CURRENTLY RUNNING code, not
    the version the function was originally written under. Update this on every
    deploy in lockstep with About-section meta and version-label header. */
-const APP_VERSION = 'v6.11.81';
+const APP_VERSION = 'v6.11.113';
 // v6.11.43 — shared egg clearing cutoff: batches ON/BEFORE this date are
 // reconciled closed (sold / incubated / gifted). Used by the egg sell-picker
 // AND the incubation draw helper. Advance one line for a fresh clearing.
@@ -10262,7 +10718,7 @@ async function authModalSubmitView() {
 
   setAuthModalBusy(true);
   try {
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -10336,7 +10792,7 @@ async function authModalSubmitGrant() {
 
   setAuthModalBusy(true);
   try {
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -10731,7 +11187,7 @@ async function submitHouseForm() {
       body.payload.originalName = HOUSE_FORM_ORIGINAL;
     }
 
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -10820,7 +11276,7 @@ async function fetchAdminStatus() {
   // Read-only — no passphrase required. Returns gate state for UI rendering.
   if (!APPS_SCRIPT_GATE_URL) return null;
   try {
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -10855,7 +11311,7 @@ async function adminGrant(passphrase, windowLabel, expiresAt) {
       },
       source: `PWA ${APP_VERSION} admin-grant`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -10881,7 +11337,7 @@ async function adminGrant(passphrase, windowLabel, expiresAt) {
 async function adminRevoke(passphrase) {
   if (!APPS_SCRIPT_GATE_URL) return { ok: false, reason: 'No gate URL configured' };
   try {
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11199,7 +11655,7 @@ async function pushGreenleafToGate(entry) {
       },
       source: `PWA ${APP_VERSION} greenleaf`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },  // Apps Script accepts this
@@ -11238,6 +11694,16 @@ async function pushGreenleafToGate(entry) {
     return null;
   }
 }
+
+// v6.11.82 — Gate write pacing (Cheison 06 Jun 2026). Serializing batch writes
+// (v6.11.30) stopped the parallel Promise.all burst that lost 2/12 pluckers at
+// Sangalo, but sequential awaits alone can still race the Apps Script LockService,
+// which may hold its lock a beat past the HTTP response. A short gap between
+// CONSECUTIVE gate writes removes that race. CONVENTION: every multi-row write
+// path (batch submit + queue flush) paces its writes with _gateGap() between
+// items — never fire the next write the instant the previous returns.
+const GATE_WRITE_GAP_MS = 250;
+function _gateGap() { return new Promise(function (r) { setTimeout(r, GATE_WRITE_GAP_MS); }); }
 
 async function pushExpenseToForm(expense) {
   // v5.0 Phase 2.2 — try gate first if configured
@@ -11292,7 +11758,7 @@ async function pushExpenseToGate(expense) {
       },
       source: `PWA ${APP_VERSION} expense`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11372,7 +11838,7 @@ async function pushActualToGate(actual) {
       },
       source: `PWA ${APP_VERSION} actual`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11515,7 +11981,7 @@ async function pushBankedToGate(row) {
       },
       source: `PWA ${APP_VERSION} banked`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11614,7 +12080,7 @@ async function pushPoultryToGate(row) {
       },
       source: `PWA ${APP_VERSION} poultry`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11706,7 +12172,7 @@ async function pushRosterToGate(row) {
       },
       source: `PWA ${APP_VERSION} roster`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -11766,6 +12232,7 @@ async function flushQueue(opts) {
     if (queue.length === 0) return;
     const remaining = [];
     let anySuccess = false;
+    let _wroteOne = false;   // v6.11.82 — gate pacing across queued writes
     for (const item of queue) {
       // Skip gate-blocked items unless this is a manual/triggered flush
       if (item.blockedByGate && !manual) {
@@ -11784,6 +12251,8 @@ async function flushQueue(opts) {
       else if (kind === 'sale') record = item.payload || (STATE.sales || []).find(s => s && s.id === recordId) || null; // v6.11.50 — payload-carried (mirror) or STATE.sales (unified)
       else if (kind === 'egg-collection') record = (STATE.eggCollection || []).find(e => e.id === recordId);
       else if (kind === 'maize-harvest') record = item.payload || (STATE.maizeHarvest || []).find(m => m.id === recordId) || null; // v6.11.62
+      else if (kind === 'coffee-production') record = item.payload || (STATE.coffeeProduction || []).find(m => m.id === recordId) || null; // v6.11.112
+      else if (kind === 'flock-health') record = item.payload || (STATE.flockHealth || []).find(m => m.id === recordId) || null; // v6.11.87
       else if (kind === 'bird-census') record = (STATE.birdCensus || []).find(b => b.id === recordId);
       else if (kind === 'vaccination') record = (STATE.vaccinations || []).find(v => v.id === recordId);
       // v6.1.7 — Cohort and litter records use queue payload (carry full record),
@@ -11801,6 +12270,7 @@ async function flushQueue(opts) {
       else if (kind === 'milk-log') record = item.payload || null;
       else if (kind === 'mortality') record = (STATE.mortality || []).find(m => m.id === recordId);
       if (!record) continue; // record was deleted locally, drop from queue
+      if (_wroteOne) await _gateGap();   // v6.11.82 — pace the gate between queued writes
       let ok;
       if (kind === 'expense')      ok = await pushExpenseToForm(record);
       else if (kind === 'actual')  ok = await pushActualToForm(record);
@@ -11809,6 +12279,8 @@ async function flushQueue(opts) {
       else if (kind === 'sale')    { const _sr = await pushSaleToGate(record); ok = !!(_sr && _sr.ok); } // v6.11.50
       else if (kind === 'egg-collection') ok = await syncEggCollection(record);
       else if (kind === 'maize-harvest') { const _mh = await pushMaizeHarvestToGate(record); ok = !!(_mh && _mh.ok); } // v6.11.62
+      else if (kind === 'coffee-production') { const _cd = await pushCoffeeDeliveryToGate(record); ok = !!(_cd && _cd.ok); } // v6.11.112
+      else if (kind === 'flock-health') { const _fh = await pushFlockHealthToGate(record); ok = !!(_fh && _fh.ok); } // v6.11.87
       else if (kind === 'bird-census') ok = await syncBirdCensus(record);
       else if (kind === 'vaccination') ok = await syncVaccination(record);
       else if (kind === 'cohort')      ok = await syncCohort(record);
@@ -11822,6 +12294,7 @@ async function flushQueue(opts) {
       else if (kind === 'milk-log')    ok = await pushMilkLogToGate(record);
       else if (kind === 'mortality')   ok = await syncMortality(record);
       else                         ok = await pushToForm(record);
+      _wroteOne = true;   // v6.11.82 — a gate write was attempted; pace the next
       if (ok) {
         anySuccess = true;
         const stats = await storageGet(K_SYNC_STATS, { synced: 0, lastSync: null });
@@ -11979,7 +12452,7 @@ async function cloudFetch(since) {
   // continues in the background until network/browser drops it. For our 
   // ~50KB JSON payload over 4G, that's fine. The 20-sec rejection just 
   // tells US (the caller) to give up waiting. No memory leak in practice.
-  const TIMEOUT_MS = 20000;
+  const TIMEOUT_MS = 30000;  // v6.11.106 — was 20000; doGet outgrew 20s as Sales+Poultry sheets grew. Temporary ceiling while we slim the doGet (Path B retires the Poultry Sales read).
   const timeoutPromise = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS)
   );
@@ -12225,6 +12698,45 @@ function cloudToLocalMaizeHarvest(r) {
   };
 }
 
+function cloudToLocalFlockHealth(r) {
+  return {
+    id: 'C-FH-' + String(r.ts || r.date || '') + '-' + String(r.condition || '').trim(),
+    ts: r.ts || (r.date ? r.date + 'T00:00:00Z' : new Date().toISOString()),
+    date: r.date || '',
+    unit: String(r.unit || '').trim(),
+    house: String(r.house || '').trim(),
+    cohort: String(r.cohort || '').trim(),
+    condition: String(r.condition || '').trim(),
+    severity: String(r.severity || '').trim(),
+    count: (r.count === null || r.count === undefined || r.count === '') ? '' : Number(r.count),
+    action: String(r.action || '').trim(),
+    method: String(r.method || 'manual').trim(),
+    confidence: (r.confidence === null || r.confidence === undefined || r.confidence === '') ? '' : Number(r.confidence),
+    notes: String(r.notes || ''),
+    _source: 'cloud'
+  };
+}
+
+function cloudToLocalCoffeeProduction(r) {
+  return {
+    id: 'C-COF-' + String(r.delivery_id || r.ts || r.date || ''),
+    ts: r.ts || (r.date ? r.date + 'T00:00:00Z' : new Date().toISOString()),
+    date: r.date || '',
+    cooperative: String(r.cooperative || '').trim(),
+    form: String(r.form || '').trim(),
+    kg: Number(r.kg) || 0,
+    slip_ref: String(r.slip_ref || '').trim(),
+    delivered_by: String(r.delivered_by || '').trim(),
+    status: String(r.status || 'pending').trim(),
+    delivery_id: String(r.delivery_id || '').trim(),
+    settled_date: r.settled_date || '',
+    settlement_sale_id: String(r.settlement_sale_id || '').trim(),
+    realized_price_kg: (r.realized_price_kg === null || r.realized_price_kg === undefined || r.realized_price_kg === '') ? null : Number(r.realized_price_kg),
+    notes: String(r.notes || ''),
+    _source: 'cloud'
+  };
+}
+
 function cloudToLocalEggCollection(r) {
   const gfN = Number(r.gf_normal) || 0;
   const gfS = Number(r.gf_small)  || 0;
@@ -12333,7 +12845,28 @@ async function applyCloudResponse(data) {
     await storageSet(K_BANKED, STATE.banked);
   }
   if (Array.isArray(data.poultry)) {
-    STATE.poultry = data.poultry.map(cloudToLocalPoultry);
+    const sheetPoultry = data.poultry.map(cloudToLocalPoultry);
+    // v6.11.105 — Poultry Sales deprecation STEP 1 (shadow). Derive the same list
+    // from the Sales poultry-mirrors and diff it against the sheet-fed list every
+    // sync. Default source is 'sheet' (zero behaviour change). Flip Control_Panel
+    // POULTRY_SOURCE='derived' for Step 2; flip back to 'sheet' = instant recoil.
+    let derivedPoultry = [];
+    try {
+      const salesLocal = Array.isArray(data.sales) ? data.sales.map(cloudToLocalSale).filter(Boolean)
+                                                   : (STATE.sales || []);
+      derivedPoultry = salesMirrorToPoultry(salesLocal);
+    } catch (e) { console.warn('[poultry-source] derive failed:', e && e.message); }
+    try { auditPoultrySource(sheetPoultry, derivedPoultry); } catch (e) { console.warn('[poultry-source] audit failed:', e && e.message); }
+
+    const src = String((STATE.controlPanel && STATE.controlPanel.POULTRY_SOURCE) || 'sheet').toLowerCase();
+    let chosen = (src === 'derived') ? derivedPoultry : sheetPoultry;
+    // RECOIL LANDING: never let a bad flag flip zero out stock. If 'derived' comes
+    // back empty while the sheet has rows, stay on the sheet and shout.
+    if (src === 'derived' && (!derivedPoultry || !derivedPoultry.length) && sheetPoultry.length) {
+      console.warn('[poultry-source] derived empty but sheet has ' + sheetPoultry.length + ' rows \u2014 staying on SHEET (recoil)');
+      chosen = sheetPoultry;
+    }
+    STATE.poultry = chosen;
     await storageSet(K_POULTRY, STATE.poultry);
   }
   // v6.11.0 — Unified Sales hydration. Apps Script returns data.sales when 
@@ -12466,6 +12999,14 @@ async function applyCloudResponse(data) {
   if (Array.isArray(data.maizeHarvest)) {
     STATE.maizeHarvest = data.maizeHarvest.map(cloudToLocalMaizeHarvest);
     await storageSet(K_MAIZE_HARVEST, STATE.maizeHarvest);
+  }
+  if (Array.isArray(data.flockHealth)) {                       // v6.11.87
+    STATE.flockHealth = data.flockHealth.map(cloudToLocalFlockHealth);
+    await storageSet(K_FLOCK_HEALTH, STATE.flockHealth);
+  }
+  if (Array.isArray(data.coffeeProduction)) {                  // v6.11.111
+    STATE.coffeeProduction = data.coffeeProduction.map(cloudToLocalCoffeeProduction);
+    await storageSet(K_COFFEE_PRODUCTION, STATE.coffeeProduction);
   }
   /* v6.0 SHIP 3 — Houses sync (cloud-replace-local; config, not transactions) */
   if (Array.isArray(data.houses)) {
@@ -12883,6 +13424,7 @@ function populateDropdowns() {
   repopulateFactoryDropdowns();
   repopulateCategoryDropdown();
   repopulateExpenseDescriptionDropdown();   // v6.11.79 — controlled descriptor list
+  repopulateExpenseBuMenu();                // v6.11.85 — business-unit access menu
 
   // Banked Income: business dropdown
   // v6.11.9 — Source from tcfg via tenantBusinessUnits() + 'Other'. Replaces 
@@ -12903,6 +13445,7 @@ function populateDropdowns() {
   // be moved any way that clears them, including gifting to staff."
   if (typeof populatePoultryPaymentDropdown === 'function') populatePoultryPaymentDropdown();
   if (typeof renderPoultryDestination === 'function') renderPoultryDestination(); // v6.11.54
+  if (typeof _populateDiscountReasons === 'function') _populateDiscountReasons('y-discount-reason'); // v6.11.102
 
   const todayIso = new Date().toISOString().slice(0,10);
   document.getElementById('q-date').value = todayIso;
@@ -12977,6 +13520,19 @@ function switchView(v) {
   // at the bottom. They no longer route to panel-add directly. Per principle: 
   // tabs are mostly VIEW; Add is a button inside, not the default landing.
   // 'admin' is the renamed 'settings' view — same panel-settings element.
+
+  // v6.11.84 — Expenses is a first-class bottom-nav destination now, not reached
+  // only through the Tea door (Cheison 06 Jun 2026 Verden). It opens the shared
+  // expense surface (panel-add scoped to the Expenses biz), so the single AND
+  // batch forms and every bit of their logic are reused unchanged.
+  if (v === 'expenses') {
+    if (typeof openAddPanel === 'function') openAddPanel('expenses', 'expense');
+    STATE.view = 'expenses';
+    document.querySelectorAll('nav.bottom-nav button').forEach(b => b.classList.toggle('active', b.dataset.view === 'expenses'));
+    const _t = document.getElementById('screen-title'); if (_t) _t.textContent = SCREEN_TITLES['expenses'] || 'Expenses';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   let panelId;
   if (v === 'admin') {
     panelId = 'panel-settings';
@@ -13026,6 +13582,7 @@ function switchView(v) {
   // CSS already handles it).
   if (v === 'crops' && typeof renderCropsHub === 'function') renderCropsHub();
   if (v === 'maize' && typeof renderMaizePanel === 'function') renderMaizePanel(); // v6.11.63
+  if (v === 'coffee' && typeof renderCoffeePanel === 'function') renderCoffeePanel(); // v6.11.111
   if (v === 'livestock' && typeof renderLivestockHub === 'function') renderLivestockHub();
   // v6.11.0 — Sales tab: POS cascade. Reset to Level 1 (business-unit cards)
   // every time the tab is entered so the operator always starts at the top
@@ -13242,6 +13799,9 @@ async function submitBatch() {
     console.log('[submitBatch] step 2: batchRows extracted', { block, factory, date, rowCount: rows.length });
     if (!block || !factory || rows.length === 0) {
       console.warn('[submitBatch] EXIT: missing block/factory/rows');
+      // v6.11.92 — blocking modal, not a fading toast: the operator must acknowledge.
+      if (rows.length === 0) await showAlertModal('Nothing saved', 'Add at least one plucker row before saving.', 'Got it');
+      else await showAlertModal('Nothing saved', 'Pick a block and factory before saving.', 'Got it');
       return;
     }
     let saved = 0;
@@ -13300,6 +13860,7 @@ async function submitBatch() {
     // keeps each write confirmed against the gate; a genuine failure is queued.
     const results = [];
     for (let i = 0; i < newEntries.length; i++) {
+      if (i > 0) await _gateGap();   // v6.11.82 — pace the gate between writes
       const ok = await syncEntry(newEntries[i]);
       results.push(ok);
       if (!ok) await queueForSync(newEntries[i], 'greenleaf');
@@ -13335,8 +13896,11 @@ function switchBiz(b) {
   document.getElementById('kind-toggle-poultry').style.display = b === 'poultry' ? '' : 'none';
   // v6.11.62 (M2 step 3) — Crops kind-toggle
   { const ct = document.getElementById('kind-toggle-crops'); if (ct) ct.style.display = b === 'crops' ? '' : 'none'; }
-  // v5.9.1 — kind-toggle-expenses kept as empty placeholder (single-child eliminated)
-  // No display toggle needed; the form itself shows via switchKind('expense') below.
+  // v6.11.85 — Expenses business-unit access menu lives in kind-toggle-expenses;
+  // show it for the Expenses biz so the surface is framed by unit, not by Tea.
+  { const xe = document.getElementById('kind-toggle-expenses');
+    if (xe) { xe.style.display = b === 'expenses' ? '' : 'none';
+      if (b === 'expenses' && typeof repopulateExpenseBuMenu === 'function') repopulateExpenseBuMenu(); } }
   // When switching business, activate the first kind in that business's toggle
   if (b === 'tea') switchKind('greenleaf');
   else if (b === 'poultry') switchKind('poultry');
@@ -13346,7 +13910,7 @@ function switchBiz(b) {
 
 function switchKind(k) {
   STATE.kind = k;
-  document.querySelectorAll('.kind-toggle button').forEach(b => b.classList.toggle('active', b.dataset.kind === k));
+  document.querySelectorAll('.kind-toggle button[data-kind]').forEach(b => b.classList.toggle('active', b.dataset.kind === k));   // v6.11.85 — [data-kind] excludes the expense BU menu buttons
   document.getElementById('greenleaf-kind').style.display = k === 'greenleaf' ? '' : 'none';
   document.getElementById('expense-kind').style.display = k === 'expense' ? '' : 'none';
   document.getElementById('actual-kind').style.display = k === 'actual' ? '' : 'none';
@@ -13358,6 +13922,11 @@ function switchKind(k) {
   // v6.11.62 (M2 step 3) — Maize harvest
   const mhKindEl = document.getElementById('maize-harvest-kind');
   if (mhKindEl) mhKindEl.style.display = k === 'maize-harvest' ? '' : 'none';
+  // v6.11.112 — Coffee delivery
+  { const cdKindEl = document.getElementById('coffee-production-kind'); if (cdKindEl) cdKindEl.style.display = k === 'coffee-production' ? '' : 'none'; }
+  // v6.11.113 — Coffee settlement
+  { const csKindEl = document.getElementById('coffee-settlement-kind'); if (csKindEl) csKindEl.style.display = k === 'coffee-settlement' ? '' : 'none'; }
+  { const fhKindEl = document.getElementById('flock-health-kind'); if (fhKindEl) fhKindEl.style.display = k === 'flock-health' ? '' : 'none'; }   // v6.11.87
   // v6.0 SHIP 4 — Bird Census
   const bcKindEl = document.getElementById('bird-census-kind');
   if (bcKindEl) bcKindEl.style.display = k === 'bird-census' ? '' : 'none';
@@ -13384,6 +13953,9 @@ function switchKind(k) {
   if (k === 'poultry' && typeof populatePoultryCohortDropdown === 'function') populatePoultryCohortDropdown();
   if (k === 'egg-collection' && typeof initEggCollectionForm === 'function') initEggCollectionForm();
   if (k === 'maize-harvest' && typeof initMaizeHarvestForm === 'function') initMaizeHarvestForm();
+  if (k === 'coffee-production' && typeof initCoffeeDeliveryForm === 'function') initCoffeeDeliveryForm();   // v6.11.112
+  if (k === 'coffee-settlement' && typeof initCoffeeSettlementForm === 'function') initCoffeeSettlementForm();   // v6.11.113
+  if (k === 'flock-health' && typeof initFlockHealthForm === 'function') initFlockHealthForm();   // v6.11.87
   if (k === 'bird-census' && typeof initBirdCensusForm === 'function') initBirdCensusForm();
   if (k === 'incubation' && typeof initIncubationForm === 'function') initIncubationForm();
   if (k === 'incubation' && typeof renderIncubationProgress === 'function') renderIncubationProgress();
@@ -13407,6 +13979,8 @@ function resetFormDate(kind) {
     'poultry':         ['y-date'],
     'egg-collection':  ['ec-date'],
     'maize-harvest':   ['mh-date'],
+    'coffee-production': ['cd-date'],
+    'coffee-settlement': ['cs-date'],
     'bird-census':     ['bc-date'],
     'incubation':      ['id-date-set', 'ih-date-hatched'],
     'vaccination':     ['vc-date'],
@@ -13517,6 +14091,71 @@ function repopulateExpenseDescriptionDropdown() {
   const cur = el.value;
   el.innerHTML = expenseDescriptorOptionsHtml();
   if (cur && Array.prototype.some.call(el.options, o => o.value === cur)) el.value = cur;  // preserve valid pick (incl. Other)
+}
+
+// v6.11.85 — Business-unit access menu for the Expenses surface (Cheison 06 Jun
+// 2026 Verden). Populates the #kind-toggle-expenses slot with one button per
+// business unit. Tapping a unit PRE-FILLS the expense business unit (the single
+// form, new batch rows, and any still-empty existing rows) — it does NOT lock
+// anything. #x-business-unit and each row's .xb-bu stay fully editable, so
+// mixed-unit batches still work. Frames Expenses as the all-farm host, reached
+// by unit rather than through the Tea door. These buttons carry data-bu (not
+// data-kind), so the generic kind-toggle wiring leaves them alone.
+let _expenseBuContext = '';
+
+function _expenseBuShortLabel(unit) {
+  return String(unit || '').replace(/^(Sinonin|Kipkenda|Olomotit)\s+/i, '').trim() || String(unit || '');
+}
+
+function repopulateExpenseBuMenu() {
+  const menu = document.getElementById('kind-toggle-expenses');
+  if (!menu) return;
+  const units = (typeof tenantBusinessUnits === 'function') ? tenantBusinessUnits() : [];
+  menu.innerHTML = units.map(function (u) {
+    return `<button type="button" data-bu="${String(u).replace(/"/g, '&quot;')}">${_expenseBuShortLabel(u)}</button>`;
+  }).join('');
+  // v6.11.86 — re-assert the active highlight; click handling is delegated to the
+  // stable container by wireExpenseBuMenu(), so it survives this innerHTML rebuild.
+  if (_expenseBuContext) Array.prototype.forEach.call(menu.querySelectorAll('button'), function (b) {
+    b.classList.toggle('active', b.dataset.bu === _expenseBuContext);
+  });
+  wireExpenseBuMenu();
+}
+
+// v6.11.86 — Delegated click handling for the expense business-unit menu. The
+// container (#kind-toggle-expenses) is a stable element; only its innerHTML is
+// rebuilt by repopulateExpenseBuMenu on each entry. The previous per-button
+// listeners were lost on every rebuild, leaving the buttons unresponsive (Cheison
+// 06 Jun 2026 Verden). One delegated listener on the container handles every
+// current and future button. Self-guards against double-wiring.
+function wireExpenseBuMenu() {
+  const menu = document.getElementById('kind-toggle-expenses');
+  if (!menu || menu.dataset.delegated === '1') return;
+  menu.dataset.delegated = '1';
+  menu.addEventListener('click', function (e) {
+    const btn = (e.target && e.target.closest) ? e.target.closest('button[data-bu]') : null;
+    if (btn) selectExpenseBusinessUnit(btn.dataset.bu);
+  });
+}
+
+function selectExpenseBusinessUnit(unit) {
+  _expenseBuContext = unit || '';
+  const menu = document.getElementById('kind-toggle-expenses');
+  if (menu) Array.prototype.forEach.call(menu.querySelectorAll('button'), function (b) {
+    b.classList.toggle('active', b.dataset.bu === _expenseBuContext);
+  });
+  // Pre-fill the single form's business unit (editable; required-check still applies)
+  const xbu = document.getElementById('x-business-unit');
+  if (xbu && Array.prototype.some.call(xbu.options, function (o) { return o.value === _expenseBuContext; })) {
+    xbu.value = _expenseBuContext;
+    if (typeof updateExpensePreview === 'function') updateExpensePreview();
+  }
+  // Default any still-EMPTY batch rows to the chosen unit (never override a pick)
+  document.querySelectorAll('#xb-rows .xb-bu').forEach(function (sel) {
+    if (!sel.value && Array.prototype.some.call(sel.options, function (o) { return o.value === _expenseBuContext; })) {
+      sel.value = _expenseBuContext;
+    }
+  });
 }
 
 function onExpenseDescriptionChange() {
@@ -13755,6 +14394,12 @@ function xbAddRow() {
     const ow = wrap.querySelector('.xb-desc-other-wrap');
     if (ow) ow.style.display = (xbDescSel.value === EXPENSE_DESC_OTHER) ? '' : 'none';
   });
+  // v6.11.85 — default this row's business unit from the access-menu context
+  // (pre-filled, still editable per row → mixed-unit batches preserved).
+  if (_expenseBuContext) {
+    const buSel = wrap.querySelector('.xb-bu');
+    if (buSel && Array.prototype.some.call(buSel.options, function (o) { return o.value === _expenseBuContext; })) buSel.value = _expenseBuContext;
+  }
   updateBatchExpensePreview();
 }
 
@@ -13815,11 +14460,23 @@ function updateBatchExpensePreview() {
 
 async function submitBatchExpenses() {
   const date = document.getElementById('xb-date').value;
-  if (!date) return;
+  // v6.11.92 — hard "nothing saved" failures use the blocking modal (Cheison:
+  // the toast is "barely legible"). The operator must acknowledge, so they can't
+  // walk away believing it saved.
+  if (!date) { await showAlertModal('Nothing saved', 'Pick a date for the batch before saving.', 'Got it'); return; }
   const rows = Array.from(document.querySelectorAll('#xb-rows .xb-row'));
   const validRows = rows.filter(xbRowIsValid);
   const skippedRows = rows.filter(r => !xbRowIsValid(r) && !xbRowIsEmpty(r));
-  if (validRows.length === 0) return;
+  if (validRows.length === 0) {
+    if (skippedRows.length > 0) {
+      await showAlertModal('Nothing saved',
+        `${skippedRows.length} row${skippedRows.length === 1 ? ' is' : 's are'} incomplete, so nothing was recorded.<br><br>Each row needs a <strong>category, amount, business unit and description</strong>.`,
+        'Got it');
+    } else {
+      await showAlertModal('Nothing saved', 'There are no expense rows to record yet — add a row first.', 'Got it');
+    }
+    return;
+  }
   const newExpenses = validRows.map((r, i) => {
     const v = xbRowValues(r);
     return {
@@ -13860,6 +14517,7 @@ async function submitBatchExpenses() {
   // bursts overwhelm the gate and lose entries to the unverifiable Form fallback.
   let queuedCount = 0;
   for (let i = 0; i < newExpenses.length; i++) {
+    if (i > 0) await _gateGap();   // v6.11.82 — pace the gate between writes
     const ok = await syncExpense(newExpenses[i]);
     if (!ok) {
       await queueForSync(newExpenses[i], 'expense');
@@ -13870,9 +14528,13 @@ async function submitBatchExpenses() {
   document.getElementById('xb-rows').innerHTML = '';
   xbAddRow();
   updateBatchExpensePreview();
-  // Toast
-  const skipMsg = skippedRows.length > 0 ? ` · ${skippedRows.length} incomplete skipped` : '';
-  showToast(`Saved ${newExpenses.length} expense${newExpenses.length === 1 ? '' : 's'}${skipMsg}`);
+  // Toast — v6.11.92: a partial save (some rows skipped) is an amber WARNING, not
+  // a plain success, so it never reads as all-clear.
+  if (skippedRows.length > 0) {
+    showToast(`Saved ${newExpenses.length} · ${skippedRows.length} incomplete row${skippedRows.length === 1 ? '' : 's'} skipped`, 5000, 'warn');
+  } else {
+    showToast(`Saved ${newExpenses.length} expense${newExpenses.length === 1 ? '' : 's'}`);
+  }
   // v5.0 Phase 2.2 — gate-rejection feedback (any of the queued items locked)
   if (queuedCount > 0 && lastWriteResult && lastWriteResult.reason === 'writes-locked') {
     setTimeout(() => {
@@ -14274,7 +14936,7 @@ async function pushActualDupeAckToGate(ackKey, action) {
       },
       source: `PWA ${APP_VERSION} actual-dupe-ack`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -14306,7 +14968,7 @@ async function pushBlockGapAckToGate(ackKey, gapPct) {
       },
       source: `PWA ${APP_VERSION} block-gap-ack`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -14338,7 +15000,7 @@ async function pushBirdPopulationAckToGate(ackKey, stage, computedCount) {
       },
       source: `PWA ${APP_VERSION} bird-population-ack`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -14654,7 +15316,7 @@ async function submitActual() {
   // can check whether plucker entries are missing. This catches the 
   // pattern Elias saw on 11 May: 232 kg pluckers logged vs 305.7 kg 
   // delivered (32% gap from missing plucker entries).
-  try { checkWeighbridgeGap(actual); } catch (e) { console.warn('[weighbridge-check] failed:', e.message); }
+  checkWeighbridgeGap(actual).catch(e => console.warn('[weighbridge-check] failed:', e && e.message));
   // v6.9.5 — Re-evaluate the 10-20% block-gap banner now that a new
   // actual has landed. The renderer reads state and decides whether
   // to surface, update, or hide the row for this (block, date).
@@ -14706,13 +15368,26 @@ function navigateToPluckerEntryPrefilled(actual) {
    weight (matches confirmFirstSubmit and the no-pluckers modal). Cheison
    feedback: "small and long, lift it to the same position as the first-
    submission helper for prominence." */
-function checkWeighbridgeGap(actual) {
+async function checkWeighbridgeGap(actual) {
   if (!actual || !actual.date || !actual.block || !actual.kg) return;
-  const pluckerSum = (STATE.entries || [])
+  const sumPluckers = () => (STATE.entries || [])
     .filter(e => e.date === actual.date
               && e.block === actual.block
               && e.factory === actual.factory)
     .reduce((s, e) => s + (Number(e.qty) || 0), 0);
+  let pluckerSum = sumPluckers();
+
+  // v6.11.98 — Stale-state guard (sealed principle #8: never judge from stale
+  // local state). A zero here is usually not "no pluckers exist" but "this
+  // device hasn't pulled the field operators' entries yet" — e.g. recording a
+  // Sireet actual from Verden minutes after the pickers logged their kilos
+  // (Sangalo, 8 Jun: 3 pluckers were already in the sheet, but not on the
+  // saving device). Pull authoritative cloud state and recompute before
+  // alarming; only warn if it is still zero against fresh data.
+  if (pluckerSum <= 0 && navigator.onLine && typeof runCloudSync === 'function') {
+    try { await runCloudSync(); } catch (e) { /* offline / failed: keep local view */ }
+    pluckerSum = sumPluckers();
+  }
 
   const route = `${actual.block} → ${actual.factory || 'factory'}`;
 
@@ -14735,8 +15410,8 @@ function checkWeighbridgeGap(actual) {
     // v6.9.18 — Message now names the route (block → factory) so the
     // operator immediately sees which leg of delivery is unaccounted for.
     if (actual.kg > 10) {
-      const body = `<strong>${route}</strong>: <strong>${actual.kg} kg</strong> saved for <strong>${actual.date}</strong>, but no plucker entries from <strong>${actual.block}</strong> have been recorded yet for <strong>${actual.factory || 'this factory'}</strong>.<br><br>` +
-                   `The field operator may still be entering them. If not, you may want to ping them.`;
+      const body = `<strong>${route}</strong>: <strong>${actual.kg} kg</strong> saved for <strong>${actual.date}</strong>, but no plucker entries from <strong>${actual.block}</strong> have synced to this device yet for <strong>${actual.factory || 'this factory'}</strong>.<br><br>` +
+                   `If the field operator is still entering them, they'll appear on the next sync. If not, you may want to ping them.`;
       showChoiceModal('⚠ No plucker entries yet', body, [
         { label: 'Record pluckers', value: 'pluckers', primary: true },
         { label: 'Got it',          value: 'ok',       primary: false }
@@ -14823,6 +15498,19 @@ function updateBankedPreview() {
 }
 
 async function submitBanked() {
+  // v6.11.96 — Banked income input RETIRED. Tea income is recorded via
+  // Sales -> Tea -> Green Leaf (the single source of truth). This path is
+  // walled off so nothing splits the ledger again. Existing banked history
+  // stays readable; this guard is reversible (delete it to re-enable).
+  if (typeof showAlertModal === 'function') {
+    showAlertModal('Record under Sales \u2192 Tea',
+      'Tea income now lives in one ledger. Record it under <strong>Sales \u2192 Tea \u2192 Green Leaf</strong> \u2014 the separate Banked Income entry has been retired.',
+      'Got it');
+  } else {
+    showToast('Tea income now goes under Sales \u2192 Tea', 5000, 'warn');
+  }
+  return;
+
   const v = iValues();
   if (!v.date || !v.business || !v.source || v.amount <= 0) return;
 
@@ -14874,17 +15562,19 @@ async function submitBanked() {
 }
 
 function renderRecentBanked() {
-  const list = [...(STATE.banked || [])].sort((a,b) => (b.ts || '').localeCompare(a.ts || '')).slice(0, 5);
+  // v6.11.96 — recent income reads Sales (Sinonin Tea); banked input retired.
+  const tea = (STATE.sales || []).filter(s => s && isTeaBU(s.business_unit) && (Number(s.amount) || 0) > 0);
+  const list = [...tea].sort((a,b) => (b.ts || '').localeCompare(a.ts || '')).slice(0, 5);
   const section = document.getElementById('i-recent-section');
   if (list.length === 0) { section.style.display = 'none'; return; }
   section.style.display = '';
-  document.getElementById('i-recent-count').textContent = (STATE.banked || []).length + ' total';
+  document.getElementById('i-recent-count').textContent = tea.length + ' total';
   const box = document.getElementById('i-recent-list');
   box.innerHTML = list.map(r => `
     <div class="record-row" style="grid-template-columns:1fr auto auto">
       <div>
-        <div class="name">${r.business}</div>
-        <div class="meta">${r.date} · ${r.source}${r.period ? ' · ' + r.period : ''}</div>
+        <div class="name">${r.business_unit}</div>
+        <div class="meta">${r.date} · ${r.buyer}${r.period ? ' · ' + r.period : ''}</div>
       </div>
       <div class="qty"></div>
       <div class="val">Ksh ${moneyRound(r.amount)}</div>
@@ -14951,6 +15641,10 @@ function yValues() {
     unit: document.getElementById('y-unit').value,
     quantity: parseFloat(document.getElementById('y-quantity').value) || 0,
     amount: parseFloat(document.getElementById('y-amount').value) || 0,
+    // v6.11.102 — unit-price calculator inputs (compute-only; not persisted)
+    unit_price: parseFloat((document.getElementById('y-unitprice') || {}).value) || 0,
+    discount: parseFloat((document.getElementById('y-discount') || {}).value) || 0,
+    discount_reason: (document.getElementById('y-discount-reason') || {}).value || '',
     payment_method: document.getElementById('y-payment').value,
     buyer: _resolvePoultryDest(),
     // v6.11.70 — Ancillary egg-sale charges (eggs only); 0 when blank/non-egg.
@@ -15141,6 +15835,7 @@ function _saleUnitKind(unitLabel) {
   if (/tea|greenleaf|leaf/.test(u)) return 'tea';
   if (/milk|dairy/.test(u)) return 'milk';
   if (/poultry|chick|egg|bird|hen|layer|cockerel/.test(u)) return 'poultry';
+  if (/coffee/.test(u)) return 'coffee';   // v6.11.110 — cooperative destination, not generic buyer
   return 'other';
 }
 function _teaFactoryNames() {
@@ -15148,6 +15843,15 @@ function _teaFactoryNames() {
 }
 function _milkFactoryNames() {
   return (Array.isArray(STATE.milkFactories) ? STATE.milkFactories : []).filter(f => f && f.name).map(f => String(f.name).trim());
+}
+/* v6.11.110 — Coffee cooperative roster (canonical). Read from the single
+   COFFEE_COOPERATIVES Control_Panel key. Two consumers: this destination
+   dropdown AND the L3 variant fallback in salesVariantsFor — so the roster
+   lives in exactly one place. Kenya direct-settlement model: greenleaf-style
+   bulk delivery to a cooperative, no middleman buyer. */
+function _coffeeCooperativeNames() {
+  const raw = tcfg('COFFEE_COOPERATIVES', '');
+  return (typeof raw === 'string' ? raw : '').split(',').map(s => s.trim()).filter(Boolean);
 }
 function renderSaleDestination() {
   const sel = document.getElementById('s-dest-select');
@@ -15167,6 +15871,8 @@ function renderSaleDestination() {
     label = 'Factory'; opts = _milkFactoryNames(); addLabel = '➕ Add factory…';
   } else if (kind === 'poultry') {
     label = 'Buyer'; opts = _knownBuyers(); addLabel = '➕ Add new…';
+  } else if (kind === 'coffee') {
+    label = 'Cooperative'; opts = _coffeeCooperativeNames(); addLabel = '➕ Add cooperative…';
   } else {
     label = 'Buyer / Source'; opts = _knownBuyers(); addLabel = '➕ Add new…';
   }
@@ -15408,12 +16114,70 @@ function populatePoultryCohortDropdown() {
   cohortEl.innerHTML = html;
 }
 
+/* v6.11.102 — Poultry sale unit-price calculator. Operator enters the unit price;
+   Amount = (total egg-equivalent ÷ unit's egg factor) × unit price − discount, and is
+   LOCKED. Multi-batch eggs sum across sources by egg-equivalent; birds price per head
+   (egg factor 1). Gift = no payment → amount 0, calculator off. Returns
+   { reasonMissing } so the preview can gate submit on an un-named discount. */
+function _computePoultryAmount() {
+  const amtEl = document.getElementById('y-amount');
+  const upEl = document.getElementById('y-unitprice');
+  const discEl = document.getElementById('y-discount');
+  const reasonField = document.getElementById('y-discount-reason-field');
+  const reasonEl = document.getElementById('y-discount-reason');
+  const calcLine = document.getElementById('y-calc-line');
+  if (!amtEl) return { reasonMissing: false };
+  const method = (document.getElementById('y-payment') || {}).value || '';
+  const pUnit = (document.getElementById('y-unit') || {}).value || '';
+  const pQty = Number((document.getElementById('y-quantity') || {}).value) || 0;
+  const unitPrice = upEl ? (parseFloat(upEl.value) || 0) : 0;
+  let discount = discEl ? (parseFloat(discEl.value) || 0) : 0;
+  if (discount < 0) { discount = 0; if (discEl) discEl.value = ''; }
+
+  // Gift = no payment is the truth → amount 0; calculator + discount off.
+  if (method === 'Gift') {
+    amtEl.readOnly = false; amtEl.style.opacity = '';
+    if (reasonField) reasonField.style.display = 'none';
+    if (calcLine) calcLine.style.display = 'none';
+    return { reasonMissing: false };
+  }
+
+  // Total egg-equivalent across primary + extra batches (birds: head count).
+  const extras = (typeof collectExtraEggSources === 'function') ? collectExtraEggSources() : [];
+  const totalEquiv = _eggsFromQtyUnit(pQty, pUnit)
+    + extras.reduce(function (a, s) { return a + _eggsFromQtyUnit(s.qty, s.unit || pUnit); }, 0);
+  const eggFactor = _isTrayUnit(pUnit) ? EGGS_PER_TRAY_SALE : 1;
+  const perEgg = eggFactor ? (unitPrice / eggFactor) : unitPrice;
+  const gross = totalEquiv * perEgg;
+  if (discount > gross) { discount = gross; if (discEl) discEl.value = String(_round2(gross)); }
+  const net = Math.max(0, gross - discount);
+
+  amtEl.value = (unitPrice > 0 && totalEquiv > 0) ? String(_round2(net)) : '';
+  amtEl.readOnly = true; amtEl.style.opacity = '0.85';
+  if (reasonField) reasonField.style.display = (discount > 0) ? '' : 'none';
+
+  if (calcLine) {
+    if (unitPrice > 0 && totalEquiv > 0) {
+      calcLine.style.display = '';
+      const single = extras.length === 0;
+      const lead = single
+        ? (pQty + ' ' + (pUnit || 'unit') + ' \u00d7 ' + unitPrice)
+        : (totalEquiv + ' eggs \u00d7 ' + _round2(perEgg));
+      calcLine.textContent = lead + ' = Ksh ' + moneyRound(gross)
+        + (discount > 0 ? '   \u2212 ' + moneyRound(discount) + ' = Ksh ' + moneyRound(net) : '');
+    } else { calcLine.style.display = 'none'; }
+  }
+
+  return { reasonMissing: (discount > 0) && !(reasonEl && reasonEl.value) };
+}
+
 function updatePoultryPreview() {
+  const calc = _computePoultryAmount();   // v6.11.102 — compute + lock y-amount first
   const v = yValues();
   // v6.9.21 — Gifts are zero-revenue transactions (broken/small eggs given 
   // to staff). Amount > 0 is not required when payment_method = 'Gift'.
   const isGift = v.payment_method === 'Gift';
-  const valid = v.date && v.product && v.stage && v.unit && v.quantity > 0 && (isGift || v.amount > 0) && v.payment_method && _poultryDestFilled() && !!v.cohort_id;
+  const valid = v.date && v.product && v.stage && v.unit && v.quantity > 0 && (isGift || v.amount > 0) && v.payment_method && _poultryDestFilled() && !!v.cohort_id && !calc.reasonMissing;
   document.getElementById('y-submit').disabled = !valid;
   const preview = document.getElementById('y-preview');
   if (!valid) { preview.style.display = 'none'; return; }
@@ -15604,9 +16368,46 @@ function refreshEggSaleSourceSelects() {
   });
 }
 
+// v6.11.82 — Immediate over-draw warning (Cheison 06 Jun 2026): the moment a row
+// asks for more eggs than its batch holds (4 trays from a 102 batch; 13 eggs from
+// a batch with 12 left after earlier rows claimed the rest), toast right away —
+// don't make the operator reach Submit to find out. The submit-time modal stays
+// as the hard block; this is the early nudge. Deduped so it fires on crossing the
+// threshold, not on every keystroke.
+let _lastOverdrawKey = '';
+function _checkEggOverdrawLive() {
+  const productEl = document.getElementById('y-product');
+  if (!productEl || productEl.value !== 'Eggs') { _lastOverdrawKey = ''; return; }
+  const sources = [];
+  const pCid = (document.getElementById('y-cohort') || {}).value || '';
+  if (pCid) sources.push({ cohort_id: pCid, qty: (document.getElementById('y-quantity') || {}).value || 0, unit: (document.getElementById('y-unit') || {}).value || '' });
+  (typeof collectExtraEggSources === 'function' ? collectExtraEggSources() : []).forEach(function (s) { sources.push(s); });
+  const req = {};
+  sources.forEach(function (s) {
+    const cid = String(s.cohort_id || '').trim();
+    if (!cid) return;
+    req[cid] = (req[cid] || 0) + _eggsFromQtyUnit(s.qty, s.unit);
+  });
+  for (const cid in req) {
+    if (!(req[cid] > 0)) continue;
+    const rem = (typeof _eggRemainingFor === 'function') ? _eggRemainingFor(cid) : null;
+    if (rem !== null && req[cid] > rem) {
+      const key = cid + ':' + req[cid] + ':' + rem;
+      if (key !== _lastOverdrawKey) {
+        _lastOverdrawKey = key;
+        if (typeof showToast === 'function') {
+          showToast('\u26a0 ' + cid + ' has only ' + rem + ' egg' + (rem === 1 ? '' : 's') + ' left \u2014 you\u2019ve asked for ' + req[cid] + '. Lower it or use another batch.', 4500);
+        }
+      }
+      return;
+    }
+  }
+  _lastOverdrawKey = '';   // all clear → reset so a fresh over-draw re-toasts
+}
 function onEggSaleSourcesChanged() {
   if (typeof refreshEggSaleSourceSelects === 'function') refreshEggSaleSourceSelects();
   if (typeof updateEggSaleSourceTally === 'function') updateEggSaleSourceTally();
+  if (typeof _checkEggOverdrawLive === 'function') _checkEggOverdrawLive();
 }
 
 function addEggSaleSourceRow() {
@@ -15675,6 +16476,12 @@ async function submitPoultry() {
   // For non-gifts, amount > 0 is still required.
   const isGiftSubmit = v.payment_method === 'Gift';
   if (!isGiftSubmit && v.amount <= 0) return;
+
+  // v6.11.102 — A discount must name a reason (governance friction; captured at
+  // entry, not persisted — discounting is an event, e.g. a loyal customer at 23/egg).
+  if (!isGiftSubmit && v.discount > 0 && !v.discount_reason) {
+    showToast('Select a discount reason', 2600); return;
+  }
 
   // v6.9.9 — Zero-population sale block. Sealed § 6.x principle (20 May 2026,
   // Elias dwarf-layer Quarantine incident): rejects any sale that would push
@@ -15791,6 +16598,12 @@ async function submitPoultry() {
   // typically records multiple sales in same product/payment session.
   document.getElementById('y-quantity').value = '';
   document.getElementById('y-amount').value = '';
+  // v6.11.102 — reset the unit-price calculator fields
+  { const _up = document.getElementById('y-unitprice'); if (_up) _up.value = '';
+    const _dsc = document.getElementById('y-discount'); if (_dsc) _dsc.value = '';
+    const _dr = document.getElementById('y-discount-reason'); if (_dr) _dr.value = '';
+    const _drf = document.getElementById('y-discount-reason-field'); if (_drf) _drf.style.display = 'none';
+    const _cl = document.getElementById('y-calc-line'); if (_cl) _cl.style.display = 'none'; }
   { const _dc = document.getElementById('y-delivery-charge'); if (_dc) _dc.value = '';
     const _cc = document.getElementById('y-crate-charge'); if (_cc) _cc.value = ''; }  // v6.11.70
   { const _ds = document.getElementById('y-dest-select'); if (_ds) _ds.value = '';
@@ -15813,6 +16626,7 @@ async function submitPoultry() {
   for (let _i = 0; _i < saleSources.length; _i++) {
     const _s = saleSources[_i];
     if (!(Number(_s.qty) > 0)) continue;
+    if (_rows.length > 0) await _gateGap();   // v6.11.82 — pace the gate (multi-batch egg sale)
     let _amt;
     if (_i === saleSources.length - 1) {
       _amt = Math.max(0, _totalAmt - _alloc);
@@ -16060,6 +16874,32 @@ const K_MAIZE_HARVEST = 'sinonin_maize_harvest_v1';
 if (typeof STATE === 'object' && !Array.isArray(STATE.maizeHarvest)) {
   STATE.maizeHarvest = [];
 }
+// v6.11.87 — Flock Health (manual-first, non-financial). Mirrors the maize-harvest
+// local model: a STATE array persisted to its own storage key, synced via the
+// gate, read back in applyCloudResponse. NEVER summed into any P&L.
+const K_FLOCK_HEALTH = 'sinonin_flock_health_v1';
+if (typeof STATE === 'object' && !Array.isArray(STATE.flockHealth)) {
+  STATE.flockHealth = [];
+}
+// v6.11.111 — Coffee deliveries (read-only display in Phase 2; written in Phase 3).
+// Local model mirrors flock health: a STATE array hydrated from doGet
+// (coffeeProduction). Kg only — value is auction-dependent, never summed into P&L.
+const K_COFFEE_PRODUCTION = 'sinonin_coffee_production_v1';
+if (typeof STATE === 'object' && !Array.isArray(STATE.coffeeProduction)) {
+  STATE.coffeeProduction = [];
+}
+// Condition vocabulary — config-driven via FLOCK_CONDITIONS in Control_Panel;
+// built-in fallback covers common Nandi poultry observations. The AI layer will
+// later predict into this same field.
+// v6.11.89 — Flock Health vocabularies are CONTROL-PANEL managed (Cheison's
+// de-democratise rule, same as expense descriptors): each dropdown reads its
+// Control_Panel key (FLOCK_CONDITIONS / FLOCK_ACTIONS / FLOCK_NOTES / FLOCK_HOUSES),
+// comma-separated, and falls back to these built-in defaults ONLY when the key is
+// unset. Defaults now include 'Dead' as a condition and disposal actions
+// (slaughter / cull / bury / incinerate). No free-text democracy on the form.
+const FLOCK_CONDITION_DEFAULT = ['Healthy', 'Dead', 'Coccidiosis', 'Newcastle (suspected)', 'Salmonella', 'Respiratory signs', 'Diarrhoea', 'Fowl pox', 'Worms', 'Lameness', 'Mites / lice', 'Eye / head swelling', 'Drop in laying', 'Injury', 'Other']; // v6.11.109 — fallback realigned to live Control_Panel (added Salmonella, Worms)
+const FLOCK_ACTION_DEFAULT = ['Observed only', 'Isolated affected', 'Treated / medicated', 'Vaccinated', 'De-Wormed', 'Called vet', 'Slaughtered', 'Culled', 'Buried', 'Incinerated']; // v6.11.109 — added De-Wormed
+const FLOCK_NOTES_DEFAULT = ['Routine check — normal', 'Found dead in morning', 'Lethargy / not feeding', 'Reduced laying', 'Wet litter', 'Isolated for monitoring', 'Recovered'];
 
 function initEggCollectionForm() {
   // Default date to today
@@ -16327,7 +17167,7 @@ async function pushMaizeHarvestToGate(row) {
       },
       source: 'PWA ' + APP_VERSION + ' maize-harvest'
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST', mode: 'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify(body)
@@ -16340,6 +17180,684 @@ async function pushMaizeHarvestToGate(row) {
   } catch (e) {
     return null;
   }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// v6.11.112 — COFFEE Phase 3: delivery logging (clones the maize-harvest path).
+// A delivery is kg ONLY — value is auction-dependent and stamped at settlement.
+// Submits action 'coffee-production' to the v5.0.83 gate, which stays dark
+// (rejects + queues, never silent) until COFFEE_PRODUCTION=TRUE in Control_Panel.
+// ───────────────────────────────────────────────────────────────────────────
+function _coffeeCoopsList() { return String(tcfg('COFFEE_COOPERATIVES', '')).split(',').map(s => s.trim()).filter(Boolean); }
+function _coffeeFormsList() { return String(tcfg('PRODUCTS_OLOMOTITCOFFEE', '')).split(',').map(s => s.trim()).filter(Boolean); }
+
+function initCoffeeDeliveryForm() {
+  const coopSel = document.getElementById('cd-coop');
+  if (coopSel) {
+    const coops = _coffeeCoopsList();
+    coopSel.innerHTML = coops.length
+      ? '<option value="">— Cooperative —</option>' + coops.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('')
+      : '<option value="">— Set COFFEE_COOPERATIVES in Control_Panel —</option>';
+  }
+  const formSel = document.getElementById('cd-form');
+  if (formSel) {
+    const forms = _coffeeFormsList();
+    formSel.innerHTML = forms.length
+      ? '<option value="">— Form —</option>' + forms.map(f => '<option value="' + escapeHtml(f) + '">' + escapeHtml(f) + '</option>').join('')
+      : '<option value="">— Set PRODUCTS_OLOMOTITCOFFEE in Control_Panel —</option>';
+  }
+  const bySel = document.getElementById('cd-by');
+  if (bySel) {
+    const roster = (typeof workforceRoster === 'function') ? workforceRoster() : [];
+    bySel.innerHTML = '<option value="">— Delivered by —</option>'
+      + roster.concat(['Other']).map(p => '<option value="' + escapeHtml(p) + '">' + escapeHtml(p) + '</option>').join('');
+  }
+  validateCoffeeDelivery();
+}
+
+function validateCoffeeDelivery() {
+  const date = (document.getElementById('cd-date') || {}).value || '';
+  const coop = (document.getElementById('cd-coop') || {}).value || '';
+  const form = (document.getElementById('cd-form') || {}).value || '';
+  const kg = Number((document.getElementById('cd-kg') || {}).value || 0);
+  const valid = !!date && !!coop && !!form && kg > 0;
+  const btn = document.getElementById('cd-submit');
+  if (btn) btn.disabled = !valid;
+  return valid;
+}
+
+async function submitCoffeeDelivery() {
+  const date = (document.getElementById('cd-date') || {}).value || '';
+  const coop = ((document.getElementById('cd-coop') || {}).value || '').trim();
+  const form = ((document.getElementById('cd-form') || {}).value || '').trim();
+  const kg = Number((document.getElementById('cd-kg') || {}).value || 0);
+  const slip = ((document.getElementById('cd-slip') || {}).value || '').trim();
+  const by = ((document.getElementById('cd-by') || {}).value || '').trim();
+  const notes = ((document.getElementById('cd-notes') || {}).value || '').trim();
+
+  if (!date) { showToast('Pick a date', 2500); return; }
+  if (!coop) { showToast('Pick a cooperative', 2500); return; }
+  if (!form) { showToast('Pick a form', 2500); return; }
+  if (!(kg > 0)) { showToast('Weight (kg) must be greater than zero', 2500); return; }
+
+  if (!isSessionConfirmed('coffee-production')) {
+    const summaryHtml = '<div><strong>' + kg + ' kg · ' + escapeHtml(form) + '</strong></div>'
+      + '<div style="opacity:0.85;margin-top:0.3rem;">' + escapeHtml(coop) + ' · ' + date + '</div>';
+    const ok = await confirmFirstSubmit('coffee-production', summaryHtml);
+    if (!ok) { showToast('Cancelled', 1800); return; }
+    markSessionConfirmed('coffee-production');
+  }
+
+  const id = 'cd-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const row = {
+    id: id, delivery_id: id, ts: new Date().toISOString(),
+    date: date, cooperative: coop, form: form, kg: kg,
+    slip_ref: slip, delivered_by: by, status: 'pending',
+    settled_date: '', settlement_sale_id: '', realized_price_kg: null, notes: notes
+  };
+
+  if (!Array.isArray(STATE.coffeeProduction)) STATE.coffeeProduction = [];
+  STATE.coffeeProduction.push(row);
+  try { await storageSet(K_COFFEE_PRODUCTION, STATE.coffeeProduction); } catch (e) {}
+
+  showToast('Saved · ' + kg + ' kg ' + form + ' \u2192 ' + coop + ' · ' + date);
+
+  // Keep date/cooperative/form for batch entry; clear weight + slip + notes.
+  ['cd-kg', 'cd-slip', 'cd-notes'].forEach(idc => { const el = document.getElementById(idc); if (el) el.value = ''; });
+  validateCoffeeDelivery();
+
+  const synced = await syncCoffeeDelivery(row);
+  if (!synced) {
+    await queueForSync(row, 'coffee-production');
+    if (lastWriteResult && lastWriteResult.reason === 'writes-locked') {
+      showToast('🔒 Writes locked — ping ' + farmOwnerTitle() + ' · delivery queued', 6000);
+    } else if (lastWriteResult && lastWriteResult.reason === 'coffee-dark') {
+      showToast('☕ Coffee logging is off (COFFEE_PRODUCTION flag) · delivery queued', 6000);
+    }
+  }
+  updateSyncIndicator();
+  if (typeof renderHome === 'function') renderHome();
+  if (typeof renderCoffeePanel === 'function') renderCoffeePanel();
+}
+
+async function syncCoffeeDelivery(row) {
+  if (USE_APPS_SCRIPT_GATE && APPS_SCRIPT_GATE_URL) {
+    const gateResult = await pushCoffeeDeliveryToGate(row);
+    if (gateResult) { lastWriteResult = gateResult; return gateResult.ok; }
+  }
+  lastWriteResult = { ok: false, reason: 'gate-unreachable' };
+  return false;
+}
+
+async function pushCoffeeDeliveryToGate(row) {
+  try {
+    const body = {
+      action: 'coffee-production',
+      payload: {
+        ts: row.ts || new Date().toISOString(),
+        date: row.date,
+        cooperative: row.cooperative,
+        form: row.form,
+        kg: Number(row.kg || 0),
+        slip_ref: row.slip_ref || '',
+        delivered_by: row.delivered_by || '',
+        delivery_id: row.delivery_id || row.id || '',
+        notes: row.notes || ''
+      },
+      source: 'PWA ' + APP_VERSION + ' coffee-production'
+    };
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    if (json && json.ok) return { ok: true, via: 'gate', duplicate: !!json.duplicate, summary: json.summary };
+    if (json && json.coffeeDark) return { ok: false, reason: 'coffee-dark', summary: json.reason };
+    if (json && json.writesLocked) return { ok: false, reason: 'writes-locked', summary: json.reason };
+    return { ok: false, reason: (json && json.reason) ? json.reason : 'gate-rejected' };
+  } catch (e) {
+    return null;
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// v6.11.113 — COFFEE Phase 4: settlement. The cooperative's single post-auction
+// lump posts as a Revenue sale (existing Sales path), then 'coffee-settle' stamps
+// that co-op's pending deliveries settled at realized price/kg = lump ÷ kg.
+// Per cooperative (Kabunyeria ≠ Kapkiyai). Online-only: the settle reads the sale
+// server-side, so the two posts run sequentially and never half-complete.
+// ───────────────────────────────────────────────────────────────────────────
+function _coffeeCoopPending(coop) {
+  const rows = Array.isArray(STATE.coffeeProduction) ? STATE.coffeeProduction : [];
+  return rows.reduce(function (a, r) {
+    return a + ((r.cooperative === coop && String(r.status || '').toLowerCase() === 'pending') ? (Number(r.kg) || 0) : 0);
+  }, 0);
+}
+function _coffeeCoopsWithPending() {
+  const rows = Array.isArray(STATE.coffeeProduction) ? STATE.coffeeProduction : [];
+  const set = {};
+  rows.forEach(function (r) {
+    if (String(r.status || '').toLowerCase() === 'pending' && (Number(r.kg) || 0) > 0) set[r.cooperative || '\u2014'] = true;
+  });
+  return Object.keys(set).sort();
+}
+
+function initCoffeeSettlementForm() {
+  const coopSel = document.getElementById('cs-coop');
+  if (coopSel) {
+    const coops = _coffeeCoopsWithPending();
+    coopSel.innerHTML = coops.length
+      ? '<option value="">— Cooperative —</option>' + coops.map(c => '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + '</option>').join('')
+      : '<option value="">— No pending deliveries to settle —</option>';
+  }
+  const m = document.getElementById('cs-method'); if (m && !m.value) m.value = 'BANK';
+  updateCoffeeSettlementPreview();
+}
+
+function updateCoffeeSettlementPreview() {
+  const coop = (document.getElementById('cs-coop') || {}).value || '';
+  const amount = Number((document.getElementById('cs-amount') || {}).value || 0);
+  const pending = coop ? _coffeeCoopPending(coop) : 0;
+  const el = document.getElementById('cs-preview');
+  if (el) {
+    if (!coop) el.textContent = '';
+    else if (pending <= 0) el.textContent = 'No pending kg for ' + coop;
+    else el.textContent = 'Pending: ' + pending + ' kg' + (amount > 0 ? ' \u00b7 realized \u2248 ' + (amount / pending).toFixed(2) + ' Ksh/kg' : '');
+  }
+  validateCoffeeSettlement();
+}
+
+function validateCoffeeSettlement() {
+  const coop = (document.getElementById('cs-coop') || {}).value || '';
+  const date = (document.getElementById('cs-date') || {}).value || '';
+  const amount = Number((document.getElementById('cs-amount') || {}).value || 0);
+  const method = (document.getElementById('cs-method') || {}).value || '';
+  const pending = coop ? _coffeeCoopPending(coop) : 0;
+  const valid = !!coop && !!date && amount > 0 && !!method && pending > 0;
+  const btn = document.getElementById('cs-submit'); if (btn) btn.disabled = !valid;
+  return valid;
+}
+
+async function submitCoffeeSettlement() {
+  const coop = ((document.getElementById('cs-coop') || {}).value || '').trim();
+  const date = (document.getElementById('cs-date') || {}).value || '';
+  const amount = Number((document.getElementById('cs-amount') || {}).value || 0);
+  const method = (document.getElementById('cs-method') || {}).value || '';
+  const ref = ((document.getElementById('cs-ref') || {}).value || '').trim();
+
+  if (!coop) { showToast('Pick a cooperative', 2500); return; }
+  if (!date) { showToast('Pick the date received', 2500); return; }
+  if (!(amount > 0)) { showToast('Amount must be greater than zero', 2500); return; }
+  const pending = _coffeeCoopPending(coop);
+  if (!(pending > 0)) { showToast('No pending kg for ' + coop, 3000); return; }
+  if (!navigator.onLine) { showToast('Settlement needs to be online — try again when connected', 4000); return; }
+
+  const realized = amount / pending;
+  const summaryHtml = '<div><strong>' + escapeHtml(coop) + '</strong></div>'
+    + '<div style="opacity:0.85;margin-top:0.3rem">Ksh ' + Math.round(amount).toLocaleString() + ' \u00f7 ' + pending + ' kg = ' + realized.toFixed(2) + ' Ksh/kg</div>'
+    + '<div style="opacity:0.7;margin-top:0.2rem;font-size:0.85rem">Posts as Revenue and settles ' + escapeHtml(coop) + '\u2019s pending deliveries.</div>';
+  if (typeof showChoiceModal === 'function') {
+    const choice = await showChoiceModal('Record settlement?', summaryHtml, [
+      { label: 'Cancel', value: 'cancel' },
+      { label: 'Record', value: 'ok', primary: true }
+    ]);
+    if (choice !== 'ok') { showToast('Cancelled', 1800); return; }
+  }
+
+  const saleId = 'cof-set-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
+  const saleRow = {
+    id: saleId, ts: new Date().toISOString(), date: date,
+    business_unit: 'Olomotit Coffee', product: 'Auction settlement', variant: coop,
+    quantity: pending, unit: 'kg', amount: amount, payment_method: method,
+    revenue_type: 'Revenue', buyer: coop, period: '', reference: ref,
+    notes: 'Coffee auction settlement \u00b7 ' + coop + ' \u00b7 ' + pending + 'kg'
+  };
+
+  showToast('Recording settlement\u2026', 2000);
+  const saleRes = await pushSaleToGate(saleRow);
+  if (!saleRes || !saleRes.ok) {
+    const why = (saleRes && saleRes.reason === 'writes-locked') ? 'writes locked' : ((saleRes && saleRes.message) || 'gate unreachable');
+    showToast('Settlement not recorded — ' + why, 5000);
+    return;
+  }
+
+  const settleRes = await pushCoffeeSettleToGate(coop, saleId);
+  if (settleRes && settleRes.ok) {
+    const today = new Date().toISOString().slice(0, 10);
+    (STATE.coffeeProduction || []).forEach(function (r) {
+      if (r.cooperative === coop && String(r.status || '').toLowerCase() === 'pending') {
+        r.status = 'settled'; r.realized_price_kg = realized; r.settlement_sale_id = saleId; r.settled_date = today;
+      }
+    });
+    try { await storageSet(K_COFFEE_PRODUCTION, STATE.coffeeProduction); } catch (e) {}
+    showToast('Settled · ' + coop + ' · ' + pending + ' kg · ' + realized.toFixed(2) + ' Ksh/kg', 6000);
+  } else {
+    const why = (settleRes && settleRes.message) ? settleRes.message : ((settleRes && settleRes.reason) || 'reconciliation failed');
+    showToast('Revenue recorded, but reconciliation failed (' + why + '). Re-run reconcileCoffeeSettlement from the editor.', 8000);
+  }
+
+  if (typeof renderHome === 'function') renderHome();
+  if (typeof renderCoffeePanel === 'function') renderCoffeePanel();
+  if (typeof switchView === 'function') switchView('coffee');
+}
+
+async function pushCoffeeSettleToGate(coop, saleId) {
+  try {
+    const body = {
+      action: 'coffee-settle',
+      payload: { cooperative: coop, settlement_sale_id: saleId },
+      source: 'PWA ' + APP_VERSION + ' coffee-settle'
+    };
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    if (json && json.coffeeDark)   return { ok: false, reason: 'coffee-dark', message: json.reason };
+    if (json && json.writesLocked) return { ok: false, reason: 'writes-locked', message: json.reason };
+    // doPost nests the reconcile result under json.written
+    const w = json && json.written;
+    if (json && json.ok && w && w.ok)          return { ok: true, cooperative: w.cooperative, deliveries: w.deliveries, kg: w.kg, amount: w.amount, realized_price_kg: w.realized_price_kg };
+    if (json && json.ok && w && w.ok === false) return { ok: false, reason: 'settle-noop', message: w.error || 'nothing to settle' };
+    return { ok: false, reason: (json && json.reason) ? json.reason : 'settle-rejected', message: (json && json.reason) };
+  } catch (e) {
+    return null;
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// v6.11.93 — Flock Health AI scaffold (camera → on-device suggestion).
+// SAFE SHAPE: the AI never decides. It SUGGESTS a condition; the operator
+// confirms or overrides; Method flips to 'ai' only if the suggestion is kept.
+// Inert until a validated model is installed — runFlockAiInference is gated on
+// the Control_Panel FLOCK_AI_MODEL_URL flag. With no model it returns
+// {enabled:false} and the form degrades to manual entry. The photo is used for
+// on-device inference only and is NEVER uploaded or stored in the sheet.
+//
+// WHY GATED: shipping unvalidated poultry-disease detection to a live flock is
+// unsafe — a false "Healthy" on a Newcastle case could cost the flock. The model
+// (MobileNetV2; Zenodo 4628934/5801834) must be trained and validated on real
+// Kipkenda photos before FLOCK_AI_MODEL_URL is set. The app side is ready now.
+// ───────────────────────────────────────────────────────────────────────────
+let _fhAiSuggestion = null;   // { condition, confidence } when the AI proposed one
+let _fhModelPromise = null;   // cached model load (resolved once per session)
+let _fhTfPromise = null;      // lazy TF.js engine load (injected on first scan only)
+
+// v6.11.100 — TF.js is loaded LAZILY (only on the first photo scan), not at app
+// boot, so the ~1MB engine never weighs down normal farm-ops use on a phone.
+// Flock AI already needs network to fetch the model from Vercel, so requiring
+// network for the engine too is consistent; offline it degrades to manual.
+function _fhEnsureTf() {
+  if (typeof tf !== 'undefined') return Promise.resolve(true);
+  if (_fhTfPromise) return _fhTfPromise;
+  _fhTfPromise = new Promise(function (resolve) {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
+    s.async = true;
+    s.onload = function () { resolve(typeof tf !== 'undefined'); };
+    s.onerror = function () { _fhTfPromise = null; resolve(false); };  // allow retry next scan
+    document.head.appendChild(s);
+  });
+  return _fhTfPromise;
+}
+
+// v6.11.100 — Maps the model's RAW class names (FLOCK_AI_CLASSES, alphabetical:
+// cocci,healthy,ncd,salmo) to the human Condition labels used in the form dropdown.
+// Keys are lower-cased raw classes. Anything unmapped falls back to its raw name.
+// 'Salmonella' must exist in FLOCK_CONDITIONS for salmo to auto-fill the dropdown.
+const FLOCK_AI_LABELMAP = { 'cocci': 'Coccidiosis', 'healthy': 'Healthy', 'ncd': 'Newcastle (suspected)', 'salmo': 'Salmonella' };
+
+function _fhShowAiResult(html, kind) {
+  const el = document.getElementById('fh-ai-result');
+  if (!el) return;
+  const bg = kind === 'suggest' ? 'rgba(184,147,90,0.14)' : 'rgba(120,120,120,0.10)';
+  const bd = kind === 'suggest' ? 'var(--brass,#b8935a)' : (kind === 'error' ? '#d68a47' : 'var(--rule,#d8cdb8)');
+  el.style.display = '';
+  el.style.background = bg;
+  el.style.border = '1px solid ' + bd;
+  el.innerHTML = html;
+}
+
+function _fhClearAiResult() {
+  _fhAiSuggestion = null;
+  const el = document.getElementById('fh-ai-result');
+  if (el) { el.style.display = 'none'; el.innerHTML = ''; }
+}
+
+async function onFlockPhotoChosen(event) {
+  const file = event && event.target && event.target.files && event.target.files[0];
+  if (event && event.target) event.target.value = '';   // allow re-pick of the same file
+  if (!file) return;
+  _fhShowAiResult('Reading photo…', 'off');
+  let res;
+  try { res = await runFlockAiInference(file); }
+  catch (e) { res = { enabled: false, error: (e && e.message) || 'scan failed' }; }
+
+  if (!res || !res.enabled) {
+    _fhAiSuggestion = null;
+    const why = (res && res.error) ? ' (' + res.error + ')' : '';
+    _fhShowAiResult('AI scan isn\u2019t enabled yet' + why + ' — record this observation manually. The photo was not stored.', 'off');
+    return;
+  }
+
+  // Suggestion only. Pre-fill Condition if the top class is an available option
+  // (now a human label via FLOCK_AI_LABELMAP), store it, and ask the operator to
+  // confirm or override. Method flips to 'ai' at submit only if this is kept.
+  _fhAiSuggestion = { condition: res.condition, confidence: res.confidence };
+  const condEl = document.getElementById('fh-condition');
+  if (condEl && Array.prototype.some.call(condEl.options, function (o) { return o.value === res.condition; })) {
+    condEl.value = res.condition;
+    if (typeof validateFlockHealth === 'function') validateFlockHealth();
+  }
+  // Top-2 readout for the clinician (Elias): primary + runner-up with percentages.
+  const t = (res.top2 && res.top2.length) ? res.top2 : [{ label: res.condition, p: res.confidence }];
+  const line = t.map(function (x) { return escapeHtml(x.label) + ' ' + Math.round((x.p || 0) * 100) + '%'; }).join(' \u00b7 ');
+  _fhShowAiResult(
+    '\uD83E\uDD16 AI reads: <strong>' + line + '</strong>.<br>' +
+    'Confirm the Condition above, or change it if the photo says otherwise. The photo was not stored.',
+    'suggest'
+  );
+}
+
+// Gated on-device inference. Returns {enabled:false} until a validated model is
+// installed via Control_Panel FLOCK_AI_MODEL_URL (and TF.js is present on device).
+async function runFlockAiInference(file) {
+  const modelUrl = (tcfg('FLOCK_AI_MODEL_URL', '') || '').trim();
+  if (!modelUrl) return { enabled: false };                       // no validated model yet → manual
+  const haveTf = await _fhEnsureTf();                             // lazy-load engine on first scan
+  if (!haveTf || typeof tf === 'undefined') return { enabled: false, error: 'engine unavailable (offline?)' };
+  // RAW class order — MUST match the model's training class_names (alphabetical:
+  // cocci,healthy,ncd,salmo). Load-bearing: a wrong order mislabels every scan.
+  const classes = (tcfg('FLOCK_AI_CLASSES', '') || 'cocci,healthy,ncd,salmo');
+  const labels = String(classes).split(',').map(function (s) { return s.trim(); }).filter(Boolean);
+  // The SavedModel→tfjs conversion produces a GRAPH model → loadGraphModel.
+  if (!_fhModelPromise) _fhModelPromise = tf.loadGraphModel(modelUrl);
+  const model = await _fhModelPromise;
+  const bitmap = await createImageBitmap(file);
+  // Preprocessing is BAKED INTO the model (Rescaling 1/127.5 − 1, first layer),
+  // so the app feeds RAW 0-255 pixels — do NOT divide by 255 here (double-scaling
+  // would push every input to ≈ −1 and make predictions noise).
+  const out = tf.tidy(function () {
+    const img = tf.browser.fromPixels(bitmap).resizeBilinear([224, 224]).toFloat().expandDims(0);
+    return model.predict(img);
+  });
+  const probs = Array.from(await out.data());
+  out.dispose();
+  if (bitmap.close) bitmap.close();
+  // Map raw class → human Condition label; rank for a top-2 readout to the clinician.
+  function human(i) {
+    const raw = labels[i] || 'Other';
+    return FLOCK_AI_LABELMAP[raw.toLowerCase()] || raw;
+  }
+  const ranked = probs.map(function (p, i) { return { i: i, p: p }; })
+                      .sort(function (a, b) { return b.p - a.p; });
+  const top2 = ranked.slice(0, 2).map(function (r) { return { label: human(r.i), p: r.p }; });
+  return {
+    enabled: true,
+    condition: top2[0] ? top2[0].label : 'Other',
+    confidence: top2[0] ? top2[0].p : 0,
+    top2: top2
+  };
+}
+
+async function submitFlockHealth() {
+  const date = (document.getElementById('fh-date') || {}).value || '';
+  const unit = ((document.getElementById('fh-unit') || {}).value || '').trim();
+  const house = ((document.getElementById('fh-house') || {}).value || '').trim();
+  const cohort = ((document.getElementById('fh-cohort') || {}).value || '').trim();
+  const condition = ((document.getElementById('fh-condition') || {}).value || '').trim();
+  const severity = ((document.getElementById('fh-severity') || {}).value || '').trim();
+  const countRaw = ((document.getElementById('fh-count') || {}).value || '').trim();
+  const action = ((document.getElementById('fh-action') || {}).value || '').trim();
+  const notes = ((document.getElementById('fh-notes') || {}).value || '').trim();
+
+  if (!date) { showToast('Pick a date', 2500); return; }
+  if (!unit) { showToast('Pick a business unit', 2500); return; }
+  if (!condition) { showToast('Pick a condition', 2500); return; }
+
+  if (!isSessionConfirmed('flock-health')) {
+    const summaryHtml = '<div><strong>' + escapeHtml(condition) + (severity ? ' · ' + escapeHtml(severity) : '') + '</strong></div>'
+      + '<div style="opacity:0.85;margin-top:0.3rem;">' + escapeHtml(unit) + (house ? ' · ' + escapeHtml(house) : '') + ' · ' + date + '</div>';
+    const ok = await confirmFirstSubmit('flock-health', summaryHtml);
+    if (!ok) { showToast('Cancelled', 1800); return; }
+    markSessionConfirmed('flock-health');
+  }
+
+  // v6.11.93 — Method/Confidence reflect whether the AI suggestion was KEPT.
+  // 'ai' only if the operator left the AI-proposed condition unchanged; otherwise
+  // it's a manual call (the operator overrode, or never scanned).
+  const _aiKept = !!(_fhAiSuggestion && _fhAiSuggestion.condition === condition);
+  const _method = _aiKept ? 'ai' : 'manual';
+  const _confidence = _aiKept ? _fhAiSuggestion.confidence : '';
+
+  const row = {
+    id: 'fh-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+    ts: new Date().toISOString(),
+    date: date, unit: unit, house: house, cohort: cohort,
+    condition: condition, severity: severity,
+    count: countRaw === '' ? '' : Number(countRaw),
+    action: action, method: _method, confidence: _confidence, notes: notes
+  };
+
+  if (!Array.isArray(STATE.flockHealth)) STATE.flockHealth = [];
+  STATE.flockHealth.push(row);
+  try { await storageSet(K_FLOCK_HEALTH, STATE.flockHealth); } catch (e) {}
+
+  showToast('Saved · ' + condition + (house ? ' · ' + house : '') + ' · ' + date);
+  if (typeof renderFlockHealthHistory === 'function') renderFlockHealthHistory();   // v6.11.90
+
+  // Keep date/unit/house for quick repeat; clear the per-observation fields.
+  ['fh-count', 'fh-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  ['fh-condition', 'fh-severity', 'fh-action'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  _fhClearAiResult();   // v6.11.93 — suggestion consumed; clear for the next observation
+  validateFlockHealth();
+
+  const synced = await syncFlockHealth(row);
+  if (!synced) {
+    await queueForSync(row, 'flock-health');
+    // v6.11.87 — loud feedback on the offline path (the silent-loss lesson from the
+    // 06 Jun expense saga): the operator always learns the entry is held, never
+    // assumes it landed. The queue survives resync and replays via flushQueue.
+    if (lastWriteResult && lastWriteResult.reason === 'writes-locked') {
+      showToast('🔒 Writes locked — ping ' + farmOwnerTitle() + ' · observation queued', 6000);
+    } else {
+      showToast('Saved offline · will sync when back online', 3500);
+    }
+  }
+  updateSyncIndicator();
+  if (typeof renderHome === 'function') renderHome();
+}
+
+async function syncFlockHealth(row) {
+  if (USE_APPS_SCRIPT_GATE && APPS_SCRIPT_GATE_URL) {
+    const gateResult = await pushFlockHealthToGate(row);
+    if (gateResult) { lastWriteResult = gateResult; return gateResult.ok; }
+  }
+  lastWriteResult = { ok: false, reason: 'gate-unreachable' };
+  return false;
+}
+
+async function pushFlockHealthToGate(row) {
+  try {
+    const body = {
+      action: 'flock-health',
+      payload: {
+        ts: row.ts || new Date().toISOString(),
+        date: row.date,
+        unit: row.unit,
+        house: row.house || '',
+        cohort: row.cohort || '',
+        condition: row.condition,
+        severity: row.severity || '',
+        count: (row.count === '' || row.count === null || row.count === undefined) ? '' : Number(row.count),
+        action: row.action || '',
+        method: row.method || 'manual',
+        confidence: (row.confidence === '' || row.confidence === null || row.confidence === undefined) ? '' : Number(row.confidence),
+        notes: row.notes || ''
+      },
+      source: 'PWA ' + APP_VERSION + ' flock-health'
+    };
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(body)
+    });
+    if (!response.ok) return null;
+    const json = await response.json();
+    if (json && json.ok) return { ok: true, via: 'gate', possibleDuplicate: !!json.possibleDuplicate, summary: json.summary };
+    if (json && json.writesLocked) return { ok: false, reason: 'writes-locked', summary: json.reason };
+    return { ok: false, reason: (json && json.reason) ? json.reason : 'gate-rejected' };
+  } catch (e) {
+    return null;
+  }
+}
+
+function initFlockHealthForm() {
+  const dEl = document.getElementById('fh-date');
+  if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0, 10);
+  if (typeof _fhClearAiResult === 'function') _fhClearAiResult();   // v6.11.93 — no stale suggestion on open
+
+  // Business unit — livestock units (poultry today; crop health later via own tab)
+  const unitEl = document.getElementById('fh-unit');
+  if (unitEl) {
+    const cur = unitEl.value;
+    const filt = (typeof _isLivestockUnit === 'function') ? _isLivestockUnit : function () { return true; };
+    const units = (typeof tenantBusinessUnits === 'function') ? tenantBusinessUnits().filter(filt) : [];
+    unitEl.innerHTML = '<option value="">— Unit —</option>' +
+      units.map(u => '<option value="' + escapeHtml(u) + '">' + escapeHtml(u) + '</option>').join('');
+    if (cur) unitEl.value = cur;
+    else if (units.length === 1) unitEl.value = units[0];
+  }
+
+  // v6.11.89 — House / location: CONTROL-PANEL managed (FLOCK_HOUSES), falling back
+  // to the active Houses sheet only when the key is unset. Lets health locations
+  // span beyond poultry houses without touching the poultry Houses registry.
+  const houseEl = document.getElementById('fh-house');
+  if (houseEl) {
+    const cur = houseEl.value;
+    let houseList = _flockCfgList('FLOCK_HOUSES');
+    if (!houseList.length) {
+      houseList = (Array.isArray(STATE.houses) ? STATE.houses : [])
+        .filter(h => h.active === true || h.active === 'TRUE' || h.active === undefined)
+        .map(h => h.name).filter(Boolean);
+    }
+    houseEl.innerHTML = '<option value="">— House / location —</option>' +
+      houseList.map(h => '<option value="' + escapeHtml(h) + '">' + escapeHtml(h) + '</option>').join('');
+    if (cur) houseEl.value = cur;
+  }
+
+  // v6.11.89 — Cohort: reuse buildCohortSelect, which filters to ACTIVE cohorts
+  // (current_count > 0) via cohortPickerOptions — dropping the sold-out / closed
+  // cohorts the raw list was surfacing (the stale relic Cheison saw).
+  const cohEl = document.getElementById('fh-cohort');
+  if (cohEl && typeof buildCohortSelect === 'function') {
+    buildCohortSelect(cohEl, '', '', '\u2014 Cohort (optional) \u2014', false);
+  }
+
+  // Condition / Action / Remark — all CONTROL-PANEL managed dropdowns (no free text).
+  _fillFlockSelect('fh-condition', 'FLOCK_CONDITIONS', FLOCK_CONDITION_DEFAULT, '— Condition —');
+  _fillFlockSelect('fh-action',    'FLOCK_ACTIONS',    FLOCK_ACTION_DEFAULT,    '— Action taken (optional) —');
+  _fillFlockSelect('fh-notes',     'FLOCK_NOTES',      FLOCK_NOTES_DEFAULT,     '— Remark (optional) —');
+
+  validateFlockHealth();
+  if (typeof renderFlockHealthHistory === 'function') renderFlockHealthHistory();   // v6.11.90
+}
+
+// v6.11.90 — Read-only Flock Health history on the entry surface. Newest-first
+// recent list + a 30-day condition tally that surfaces spikes at a glance.
+// Pure read of STATE.flockHealth; touches no financial rollup.
+function renderFlockHealthHistory() {
+  const section = document.getElementById('fh-recent-section');
+  if (!section) return;
+  const all = Array.isArray(STATE.flockHealth) ? STATE.flockHealth : [];
+  if (all.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  const countEl = document.getElementById('fh-recent-count');
+  if (countEl) countEl.textContent = all.length + ' logged';
+
+  // 30-day condition tally — spot a run of Dead / Coccidiosis etc.
+  const tallyEl = document.getElementById('fh-recent-tally');
+  if (tallyEl) {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const tally = {};
+    all.forEach(e => { if ((e.date || '') >= cutoff && e.condition) tally[e.condition] = (tally[e.condition] || 0) + 1; });
+    const parts = Object.keys(tally).sort((a, b) => tally[b] - tally[a]).map(k => escapeHtml(k) + ' \u00d7' + tally[k]);
+    tallyEl.innerHTML = parts.length ? ('Last 30 days: ' + parts.join(' \u00b7 ')) : '';
+    tallyEl.style.display = parts.length ? '' : 'none';
+  }
+
+  const box = document.getElementById('fh-recent-list');
+  if (box) {
+    const sorted = [...all].sort((a, b) => String(b.ts || b.date || '').localeCompare(String(a.ts || a.date || '')));
+    box.innerHTML = sorted.slice(0, 10).map(e => {
+      const sev = e.severity ? ' \u00b7 ' + escapeHtml(e.severity) : '';
+      const metaBits = [e.date, e.unit, e.house, e.cohort, e.action, e.notes]
+        .filter(Boolean).map(escapeHtml).join(' \u00b7 ');
+      const cnt = (e.count !== '' && e.count !== null && e.count !== undefined) ? (e.count + ' affected') : '';
+      return `
+        <div class="record-row" style="grid-template-columns:1fr auto">
+          <div>
+            <div class="name">${escapeHtml(e.condition || '\u2014')}${sev}</div>
+            <div class="meta">${metaBits}</div>
+          </div>
+          <div class="val">${cnt}</div>
+        </div>`;
+    }).join('');
+  }
+}
+
+// v6.11.89 — Read a comma-separated Control-Panel list, trimmed; [] when unset.
+function _flockCfgList(key) {
+  try {
+    const cfg = (typeof tcfg === 'function') ? tcfg(key, '') : '';
+    if (cfg && String(cfg).trim()) return String(cfg).split(',').map(s => s.trim()).filter(Boolean);
+  } catch (e) {}
+  return [];
+}
+
+// v6.11.89 — Fill a flock-health <select> from a Control-Panel key, falling back to
+// a built-in default. Preserves the current selection if still present.
+function _fillFlockSelect(elId, cfgKey, fallback, placeholder) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const cur = el.value;
+  let list = _flockCfgList(cfgKey);
+  if (!list.length) list = fallback || [];
+  el.innerHTML = '<option value="">' + placeholder + '</option>' +
+    list.map(v => '<option value="' + escapeHtml(v) + '">' + escapeHtml(v) + '</option>').join('');
+  if (cur && list.indexOf(cur) !== -1) el.value = cur;
+}
+
+function validateFlockHealth() {
+  const date = (document.getElementById('fh-date') || {}).value || '';
+  const unit = (document.getElementById('fh-unit') || {}).value || '';
+  const condition = (document.getElementById('fh-condition') || {}).value || '';
+  const valid = !!date && !!unit && !!condition;
+  const btn = document.getElementById('fh-submit');
+  if (btn) btn.disabled = !valid;
+  return valid;
+}
+
+// v6.11.87 — Isolated open for the Flock Health surface. Shows panel-add with ONLY
+// the flock-health form: biz-toggle hidden and every kind-toggle hidden, so this
+// non-financial entry never entangles with the financial biz/kind machinery.
+function openFlockHealth() {
+  STATE.view = 'add';
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel-add');
+  if (panel) panel.classList.add('active');
+  const titleEl = document.getElementById('screen-title');
+  if (titleEl) titleEl.textContent = 'Flock Health';
+  const bizToggle = document.querySelector('.biz-toggle');
+  if (bizToggle) bizToggle.style.display = 'none';
+  document.querySelectorAll('.kind-toggle').forEach(kt => { kt.style.display = 'none'; });
+  if (typeof switchKind === 'function') switchKind('flock-health');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function submitEggCollection() {
@@ -16442,7 +17960,7 @@ async function pushEggCollectionToGate(row) {
       },
       source: `PWA ${APP_VERSION} egg-collection`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -16685,7 +18203,7 @@ async function pushBirdCensusToGate(row) {
       },
       source: `PWA ${APP_VERSION} bird-census`
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -17272,7 +18790,7 @@ async function submitIncubationStart() {
         },
         source: `PWA ${APP_VERSION} incubation-start`
       };
-      const r = await fetch(APPS_SCRIPT_GATE_URL, {
+      const r = await gatePost_(APPS_SCRIPT_GATE_URL, {
         method: 'POST', mode: 'cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body)
@@ -17434,7 +18952,7 @@ async function submitIncubationHatch() {
         },
         source: `PWA ${APP_VERSION} incubation-hatch`
       };
-      const r = await fetch(APPS_SCRIPT_GATE_URL, {
+      const r = await gatePost_(APPS_SCRIPT_GATE_URL, {
         method: 'POST', mode: 'cors',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(body)
@@ -18681,7 +20199,7 @@ async function pushVaccinationToGate(row) {
       },
       source: 'PWA ' + APP_VERSION + ' vaccination'
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -18737,7 +20255,7 @@ async function pushCohortToGate(record) {
       payload: record, // record already includes mode + cohort_id + stage etc.
       source: 'PWA ' + APP_VERSION + ' cohort'
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -18826,6 +20344,20 @@ function initMortalityForm() {
   // Default date to today
   const dEl = document.getElementById('mt-date');
   if (dEl && !dEl.value) dEl.value = new Date().toISOString().slice(0, 10);
+
+  // v6.11.82 — Stage list from the canonical BIRD_CENSUS_STAGES (Cheison 06 Jun
+  // 2026: "quarantine and deformities not showing under death"). The death form
+  // had hardcoded a 5-stage subset that omitted Quarantine, Deformities and
+  // Retired birds — so an isolated or condition bird could not be recorded as
+  // dying. Driving it from the same list the census uses keeps the two in
+  // lockstep forever; a future stage added there shows up here automatically.
+  const mtStageEl = document.getElementById('mt-stage');
+  if (mtStageEl) {
+    const cur = mtStageEl.value;
+    mtStageEl.innerHTML = '<option value="">— Stage —</option>' +
+      BIRD_CENSUS_STAGES.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (cur && BIRD_CENSUS_STAGES.indexOf(cur) !== -1) mtStageEl.value = cur;
+  }
 
   // Populate Houses dropdown (active only)
   const houseEl = document.getElementById('mt-house');
@@ -18962,7 +20494,7 @@ async function pushMortalityToGate(row) {
       },
       source: 'PWA ' + APP_VERSION + ' mortality'
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -19031,7 +20563,7 @@ async function pushLitterChangeToGate(record) {
       payload: record,
       source: 'PWA ' + APP_VERSION + ' ' + action
     };
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -19533,7 +21065,7 @@ function renderEmptyStateHint() {
   const anyEntry = (STATE.entries || []).some(e => e.date === today);
   const anyExpense = (STATE.expenses || []).some(x => x.date === today);
   const anyActual = (STATE.actuals || []).some(a => a.date === today);
-  const anyBanked = (STATE.banked || []).some(b => b.date === today);
+  const anyBanked = (STATE.sales || []).some(s => s && isTeaBU(s.business_unit) && s.date === today);  // v6.11.96 — tea income now in Sales
   const anyPoultry = (STATE.poultry || []).some(p => p.date === today);
   const anyEggColl = (STATE.eggCollection || []).some(e => e.date === today);
   const anyCensus = (STATE.birdCensus || []).some(c => c.date === today);
@@ -20103,6 +21635,29 @@ function computeStageLive(stage, house, today) {
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────
+// v6.11.94 — Unified revenue read. STATE.sales is the single source of truth
+// for income: tea banked-GL history + poultry mirrors + the 929-row import
+// all live in the Sales sheet, read back via readSales/doGet (backend v5.0.71).
+// Rule (Cheison): amount > 0 = revenue, no Revenue-Type filter, crate charges
+// count. buTest folds poultry's 'Poultry' (mirror/import) and 'Kipkenda
+// Poultry' (direct) labels into one bucket. The legacy STATE.banked /
+// STATE.poultry INCOME rollups are retired here — their sheets still feed
+// operational paths (egg FIFO, cohort decrement, buyer lists), untouched.
+// ─────────────────────────────────────────────────────────────────────
+function salesRevenue(filter, buTest) {
+  return (Array.isArray(STATE.sales) ? STATE.sales : []).reduce(function (sum, s) {
+    if (!s) return sum;
+    var amt = Number(s.amount) || 0;
+    if (amt <= 0) return sum;
+    if (filter && !filter(s)) return sum;
+    if (buTest && !buTest(s.business_unit)) return sum;
+    return sum + amt;
+  }, 0);
+}
+function isTeaBU(bu)     { return bu === 'Sinonin Tea'; }
+function isPoultryBU(bu) { return /poultry/i.test(bu || ''); }
+
 function renderHome() {
   // v6.3.12 — Greeting changed from Swahili time-based to Nandi.
   // "Chamgei chemogeet" — universal Nandi greeting. If you want morning/evening 
@@ -20178,9 +21733,8 @@ function renderHome() {
   // ─────────────────────────────────────────────────────────────────────
   
   function sumIncome(filter) {
-    const banked = (STATE.banked || []).filter(filter).reduce((s, b) => s + (Number(b.amount) || 0), 0);
-    const poultry = (STATE.poultry || []).filter(filter).reduce((s, p) => s + (Number(p.amount) || 0), 0);
-    return banked + poultry;
+    // v6.11.94 — all business units, Sales sheet as source of truth
+    return salesRevenue(filter);
   }
   function sumSpend(filter) {
     return (STATE.expenses || []).filter(filter).reduce((s, x) => s + (Number(x.amount) || 0), 0);
@@ -20324,19 +21878,17 @@ function renderHome() {
   // the headline, fmtKes (compact k/M) for horizon cells.
   // ─────────────────────────────────────────────────────────────────────
   
-  // Tea revenue (banked only — factory deposits)
-  const sumBanked = (filter) => (STATE.banked || [])
-    .filter(filter)
-    .reduce((s, b) => s + (Number(b.amount) || 0), 0);
+  // v6.11.94 — Tea card reads Sinonin Tea revenue from Sales (was STATE.banked).
+  // Picks up the direct GL entries that were stranded outside Banked_Income.
+  const sumBanked = (filter) => salesRevenue(filter, isTeaBU);
   const teaToday = sumBanked(ftToday);
   const teaMTD   = sumBanked(ftMTD);
   const teaYTD   = sumBanked(ftYTD);
   const teaLife  = sumBanked(ftAll);
   
-  // Poultry revenue (poultry sales)
-  const sumPoultrySales = (filter) => (STATE.poultry || [])
-    .filter(filter)
-    .reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  // v6.11.94 — Poultry card reads poultry revenue from Sales (was STATE.poultry).
+  // /poultry/i folds 'Poultry' (mirror/import) + 'Kipkenda Poultry' (direct).
+  const sumPoultrySales = (filter) => salesRevenue(filter, isPoultryBU);
   const poultryToday = sumPoultrySales(ftToday);
   const poultryMTD   = sumPoultrySales(ftMTD);
   const poultryYTD   = sumPoultrySales(ftYTD);
@@ -20388,6 +21940,7 @@ function renderHome() {
   // Milk volume tracking ships in v6.10.5 (after first calving). For v6.10.2
   // the card always shows the dry-state shape because none of the 4
   // Sinonin cows have calved yet — they're all in-calf.
+  if (typeof populateCoffeeCard === 'function') populateCoffeeCard();   // v6.11.111
   const dairyCows = (STATE.cows || []).filter(c => c.status === 'alive');
   const dairyTotalCows = dairyCows.length;
   const dairyHerdState = computeDairyHerdState(dairyCows);  // see fn below
@@ -21034,14 +22587,27 @@ function renderHome() {
     if (subEl) subEl.textContent = sub;
   }
 
-  // Daily LE — TODAY's normal eggs ÷ today's layers (latest census)
-  if (totalLayers > 0 && todayRow) {
-    const todayNormal = Number(todayRow.normal) || ((Number(todayRow.gf_normal)||0) + (Number(todayRow.ud_normal)||0));
-    const dailyLE = (todayNormal / totalLayers) * 100;
-    setLE('poultry-le-daily', 'poultry-le-daily-sub', dailyLE,
-          `${todayNormal} eggs ÷ ${totalLayers} layers · today`);
-  } else if (totalLayers > 0) {
-    setLE('poultry-le-daily', 'poultry-le-daily-sub', null, `no eggs today · ${totalLayers} layers`);
+  // Daily LE — latest collection day's normal eggs ÷ layers.
+  // v6.11.108 — anchors to the most recent collection date (and shows that date)
+  // instead of blanking to "no eggs today". Once a collection is recorded today,
+  // the label overwrites to "today". A blank card early in the day hid the last
+  // real reading and made the trio look inconsistent ("no eggs today" beside an MTD avg).
+  if (totalLayers > 0) {
+    let latestRow = null;
+    for (let i = 0; i < allEggs.length; i++) {
+      const e = allEggs[i];
+      if (!e || !e.date || e.date > todayStr) continue;          // ignore malformed / future-dated
+      if (!latestRow || e.date > latestRow.date) latestRow = e;
+    }
+    if (latestRow) {
+      const dayNormal = Number(latestRow.normal) || ((Number(latestRow.gf_normal)||0) + (Number(latestRow.ud_normal)||0));
+      const dailyLE = (dayNormal / totalLayers) * 100;
+      const when = (latestRow.date === todayStr) ? 'today' : formatNandiShortDate(latestRow.date);
+      setLE('poultry-le-daily', 'poultry-le-daily-sub', dailyLE,
+            `${dayNormal} eggs ÷ ${totalLayers} layers · ${when}`);
+    } else {
+      setLE('poultry-le-daily', 'poultry-le-daily-sub', null, `no collections yet · ${totalLayers} layers`);
+    }
   } else {
     setLE('poultry-le-daily', 'poultry-le-daily-sub', null, 'no layers in census');
   }
@@ -21404,11 +22970,10 @@ function renderYoYAndTrend() {
     return d >= fromDate && d <= toDate;
   }
 
-  // Helper: total income (banked + poultry) and total expenses for a date range
+  // Helper: total income (Sales, all BUs) and total expenses for a date range
   function totalsFor(fromDate, toDate) {
     let income = 0, expenses = 0;
-    (STATE.banked || []).forEach(b => { if (inRange(b.date, fromDate, toDate)) income += (b.amount || 0); });
-    (STATE.poultry || []).forEach(p => { if (inRange(p.date, fromDate, toDate)) income += (p.amount || 0); });
+    income += salesRevenue(function (s) { return inRange(s.date, fromDate, toDate); });  // v6.11.94 — Sales as source of truth
     STATE.expenses.forEach(x => { if (inRange(x.date, fromDate, toDate)) expenses += (x.amount || 0); });
     return { income, expenses, margin: income - expenses };
   }
@@ -21521,10 +23086,11 @@ function showMonthDetail(ym) {
     return dd >= d && dd <= endOfMonth;
   }
   // Compute breakdown
-  const banked = (STATE.banked || []).filter(b => inRange(b.date)).reduce((s,b) => s + (b.amount || 0), 0);
-  const poultry = (STATE.poultry || []).filter(p => inRange(p.date)).reduce((s,p) => s + (p.amount || 0), 0);
-  const eggsIncome = (STATE.poultry || []).filter(p => inRange(p.date) && p.product === 'Eggs').reduce((s,p) => s + (p.amount || 0), 0);
-  const birdsIncome = (STATE.poultry || []).filter(p => inRange(p.date) && (p.product === 'Chicks' || p.product === 'Chicken')).reduce((s,p) => s + (p.amount || 0), 0);
+  // v6.11.94 — month breakdown reads Sales as source of truth
+  const banked = salesRevenue(s => inRange(s.date), isTeaBU);          // Tea revenue
+  const poultry = salesRevenue(s => inRange(s.date), isPoultryBU);
+  const eggsIncome = salesRevenue(s => inRange(s.date) && (s.product || '') === 'Eggs', isPoultryBU);
+  const birdsIncome = salesRevenue(s => inRange(s.date) && ['Chicks','Chicken'].indexOf(s.product || '') >= 0, isPoultryBU);
   const expenses = STATE.expenses.filter(x => inRange(x.date)).reduce((s,x) => s + (x.amount || 0), 0);
   const income = banked + poultry;
   const margin = income - expenses;
@@ -21542,7 +23108,7 @@ function showMonthDetail(ym) {
   backdrop.innerHTML = `
     <div class="trend-modal">
       <h4>${monthLbl}</h4>
-      <div class="modal-row"><span class="lbl">Banked income</span><span class="val">Ksh ${moneyRound(banked)}</span></div>
+      <div class="modal-row"><span class="lbl">Tea income</span><span class="val">Ksh ${moneyRound(banked)}</span></div>
       <div class="modal-row"><span class="lbl">Eggs income</span><span class="val">Ksh ${moneyRound(eggsIncome)}</span></div>
       <div class="modal-row"><span class="lbl">Live birds income</span><span class="val">Ksh ${moneyRound(birdsIncome)}</span></div>
       <div class="modal-row"><span class="lbl"><strong>Total income</strong></span><span class="val"><strong>Ksh ${moneyRound(income)}</strong></span></div>
@@ -21862,7 +23428,9 @@ function renderFactoryRecon() {
   }
 
   const actuals = STATE.actuals || [];
-  const banked = STATE.banked || [];
+  // v6.11.96 — booked income now comes from Sales (Sinonin Tea rows), not the
+  // retired Banked sheet. buyer = factory; period = tidied "Month YYYY" text.
+  const teaSales = (STATE.sales || []).filter(s => s && isTeaBU(s.business_unit) && (Number(s.amount) || 0) > 0);
   const fnorm = s => String(s || '').trim().toLowerCase();
 
   // Compute per-factory rows once; both views consume the same data.
@@ -21878,11 +23446,11 @@ function renderFactoryRecon() {
         expected += kgv * netPerKg(a.factory, a.date);
       });
       let booked = 0, hasBooking = false;
-      banked.forEach(b => {
-        if (fnorm(b.source) !== fkey) return;
-        const periodMatch = b.period && fnorm(b.period) === fnorm(m.periodLabel);
-        const dateMatch = !b.period && String(b.date || '').slice(0, 7) === m.ym;
-        if (periodMatch || dateMatch) { booked += Number(b.amount) || 0; hasBooking = true; }
+      teaSales.forEach(s => {
+        if (fnorm(s.buyer) !== fkey) return;
+        const periodMatch = s.period && fnorm(s.period) === fnorm(m.periodLabel);
+        const dateMatch = !s.period && String(s.date || '').slice(0, 7) === m.ym;
+        if (periodMatch || dateMatch) { booked += Number(s.amount) || 0; hasBooking = true; }
       });
       return { m, glKg, expected, booked, hasBooking };
     });
@@ -24387,7 +25955,7 @@ async function pushDorperToGate(record, action) {
   // {ok: true} confirmation back from Apps Script. This works when 
   // the browser allows cross-origin response reading. 
   try {
-    const response = await fetch(APPS_SCRIPT_GATE_URL, {
+    const response = await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -24427,7 +25995,7 @@ async function pushDorperToGate(record, action) {
   // will both confirm the write landed. Same fallback pattern your 
   // existing six write paths use (gate-cors → form-no-cors).
   try {
-    await fetch(APPS_SCRIPT_GATE_URL, {
+    await gatePost_(APPS_SCRIPT_GATE_URL, {
       method: 'POST',
       mode:   'no-cors',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -26797,9 +28365,14 @@ function confirmFirstSubmit(kindLabel, summaryHtml) {
   });
 }
 
-function showToast(msg, durationMs) {
+function showToast(msg, durationMs, type) {
   const t = document.getElementById('toast');
   t.textContent = msg;
+  // v6.11.92 — severity variants. Default = success (green). 'warn' = amber (a
+  // partial result the operator must notice), 'error' = red. Hard "nothing saved"
+  // failures use showAlertModal instead — a blocking dialog, not a fading strip.
+  t.classList.remove('toast-warn', 'toast-error');
+  if (type === 'warn' || type === 'error') t.classList.add('toast-' + type);
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), durationMs || 2200);
 }
@@ -26950,9 +28523,16 @@ async function nudgeRecordActualsIfMissing(entry) {
     if (!entry || !entry.date || !entry.block || !entry.factory) return;
     const key = `${entry.date}|${entry.block}|${entry.factory}`;
     if (ACTUALS_NUDGE_DISMISSED.has(key)) return;
-    const hasActual = (STATE.actuals || []).some(a =>
+    const matchActual = () => (STATE.actuals || []).some(a =>
       a && a.date === entry.date && a.block === entry.block && a.factory === entry.factory
     );
+    let hasActual = matchActual();
+    // v6.11.98 — stale-state guard: re-check against fresh cloud state before
+    // nudging, so an actual recorded on another device isn't reported missing.
+    if (!hasActual && navigator.onLine && typeof runCloudSync === 'function') {
+      try { await runCloudSync(); } catch (e) { /* offline / failed: keep local view */ }
+      hasActual = matchActual();
+    }
     if (hasActual) return;
     const body = `Plucker entries are flowing for <strong>${entry.block}</strong> on <strong>${entry.date}</strong>, but no factory-confirmed actual has been recorded yet for <strong>${entry.factory}</strong>.<br><br>` +
                  `Recording the actual now keeps the day's reconciliation tight.`;
@@ -27365,14 +28945,13 @@ function showUpdateBanner() {
   populateDropdowns();
   renderBatchList();
 
-  // v6.11.7 — Bottom-nav Admin button IS #nav-settings (relocated from 
-  // header). wireLockIconAuth() attaches its capture-phase handler to it 
-  // directly. For state="locked", capture-phase intercepts via 
-  // stopPropagation so this bubble-phase listener never sees the click 
-  // and switchView is not called. For state="admin"/"open", first tap 
-  // bubbles through and switchView('admin') opens the panel. Single 
-  // gate, no delegation needed.
-  document.querySelectorAll('nav.bottom-nav button').forEach(b => {
+  // v6.11.83 — Admin (#nav-settings) now lives in the HEADER (left of refresh),
+  // moved from the bottom nav. wireLockIconAuth() still attaches its capture-phase
+  // handler to it by id, so for state="locked" it intercepts via stopPropagation
+  // and this bubble listener never fires (panel stays shut). For "admin"/"open"
+  // the tap bubbles through and switchView('admin') opens the panel. The selector
+  // now includes the header button so that bubble path is wired wherever it sits.
+  document.querySelectorAll('nav.bottom-nav button, header.brand #nav-settings').forEach(b => {
     b.addEventListener('click', () => switchView(b.dataset.view));
   });
 
@@ -27382,7 +28961,7 @@ function showUpdateBanner() {
   });
 
   // Kind toggles within each business
-  document.querySelectorAll('.kind-toggle button').forEach(b => {
+  document.querySelectorAll('.kind-toggle button[data-kind]').forEach(b => {   // v6.11.85 — [data-kind] excludes expense BU menu buttons (wired separately)
     b.addEventListener('click', () => switchKind(b.dataset.kind));
   });
 
@@ -27415,12 +28994,44 @@ function showUpdateBanner() {
   }
 
   // Poultry Sales
-  ['y-date','y-product','y-stage','y-cohort','y-unit','y-quantity','y-amount','y-payment','y-dest-select','y-dest-new'].forEach(id => {
+  ['y-date','y-product','y-stage','y-cohort','y-unit','y-quantity','y-unitprice','y-discount','y-discount-reason','y-amount','y-payment','y-dest-select','y-dest-new'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     el.addEventListener('input', updatePoultryPreview);
     el.addEventListener('change', updatePoultryPreview);
   });
+  // v6.11.102 — Unit changed: clear a stale unit price + discount (a per-tray
+  // price must not silently carry onto per-egg, etc.).
+  const yUnitEl = document.getElementById('y-unit');
+  if (yUnitEl && !yUnitEl.dataset.upWired) {
+    yUnitEl.dataset.upWired = '1';
+    yUnitEl.addEventListener('change', () => {
+      const up = document.getElementById('y-unitprice'); if (up) up.value = '';
+      const dc = document.getElementById('y-discount'); if (dc) dc.value = '';
+      const dr = document.getElementById('y-discount-reason'); if (dr) dr.value = '';
+      updatePoultryPreview();
+    });
+  }
+  // v6.11.102 — Toast the computed total once the operator finishes the unit price.
+  const yUp = document.getElementById('y-unitprice');
+  if (yUp && !yUp.dataset.tWired) {
+    yUp.dataset.tWired = '1';
+    yUp.addEventListener('blur', () => {
+      const u = (document.getElementById('y-unit') || {}).value || '';
+      const q = Number((document.getElementById('y-quantity') || {}).value) || 0;
+      const p = parseFloat(yUp.value) || 0;
+      const amt = parseFloat((document.getElementById('y-amount') || {}).value) || 0;
+      if (u && p > 0 && q > 0 && amt > 0) {
+        showToast(q.toLocaleString('en-KE') + ' ' + u + ' \u00d7 ' + p + ' = Ksh ' + moneyRound(amt), 2600);
+      }
+    });
+  }
+  // v6.11.82 — primary batch change re-checks live over-draw + re-filters extra rows
+  const yCohortLive = document.getElementById('y-cohort');
+  if (yCohortLive && !yCohortLive.dataset.odWired) {
+    yCohortLive.dataset.odWired = '1';
+    yCohortLive.addEventListener('change', () => { if (typeof onEggSaleSourcesChanged === 'function') onEggSaleSourcesChanged(); });
+  }
   // v6.11.54 — Destination select toggles the "Add new / Other" reveal input.
   const yDestSel = document.getElementById('y-dest-select');
   if (yDestSel) yDestSel.addEventListener('change', () => { _togglePoultryDestNew(); updatePoultryPreview(); });
